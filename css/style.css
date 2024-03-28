@@ -1,0 +1,29 @@
+.facets{
+	margin-top: 40px;
+	margin-left: 200px;
+	padding: 20px;
+	border: 1px solid black;
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+}
+
+.facet{
+	margin:15px 0;
+	width: 250px;
+	border: 1px solid;
+	padding: 15px;
+}
+
+.facet-option{
+	display: flex;
+	justify-content: space-between;
+}
+
+.facet-label-wrapper{
+	margin-left: 5px;
+	display: inline-block;
+}
+
+.facet-input-and-label{
+	display: flex;
+}
