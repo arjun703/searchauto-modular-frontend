@@ -1,4 +1,4 @@
-function generateRandomString(length) {
+function generateRandomString(length = 10) {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
 
