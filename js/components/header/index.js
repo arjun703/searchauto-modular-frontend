@@ -1,0 +1,6 @@
+    function setupHeader(){
+        setupGarage()
+        setupQuickSearch()
+    }
+
+ 
