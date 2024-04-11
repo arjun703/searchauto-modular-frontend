@@ -22,21 +22,22 @@ function readFile(filePath) {
 }
 
 async function concatenateFiles(filePaths) {
+
+  const filePath = `C:\\xampp\\htdocs\\myprojects\\search-auto\\search-auto-for-shopify\\local-dev\\flextread\\assets\\_ymm.js`;
   try {
     const fileContents = await Promise.all(filePaths.map(filePath => readFile(filePath)));
     const concatenatedContent = fileContents.join('\n');
-    fs.writeFile('./prod/bundled.js', concatenatedContent, 'utf8', (error) => {
+    fs.writeFile(filePath, concatenatedContent, 'utf8', (error) => {
       if (error) {
         console.error('Error writing file:', error);
       } else {
        console.log('Files concatenated successfully!');
-			const originalCode = fs.readFileSync('./prod/bundled.js', 'utf8');
+			// const originalCode = fs.readFileSync('./prod/bundled.js', 'utf8');
 
-			const minifiedCode = uglifyjs.minify(originalCode, { compress: true, mangle: true });
+			// const minifiedCode = uglifyjs.minify(originalCode, { compress: true, mangle: true });
 
-			fs.writeFileSync('./prod/bundled.js', minifiedCode.code, 'utf8');
+			// fs.writeFileSync(filePath, minifiedCode.code, 'utf8');
 
-			console.log('Code minified and obfuscated successfully!');
       }
     });
   } catch (error) {

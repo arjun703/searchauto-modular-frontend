@@ -1,4 +1,271 @@
-async function loadSettingsFile(){customYmm.settingsURL="https://auto.searchalytics.com/suspension-bros/dashboard/send_settings.php?requestedFile=settings.json";var e=await(await fetch(customYmm.settingsURL)).json();customYmm.settings=e,customYmm.years=e.years,console.log(customYmm.settings)}async function initialize(){loadCssFile(),await loadSettingsFile(),decideWhichPageIsIt(),setupAddToGarageYMMform(),setupHeader(),customYmm.isInProductPage?setupForProductPage():customYmm.isInHomePage?setupForHomePage():customYmm.isInCategoryPage?setupForCategoryPage():customYmm.isInSearchPage?setupForSearchPage():customYmm.isInBrandPage&&setupForBrandPage()}async function setInitialSelections(){function e(e){return new URLSearchParams(window.location.search).get(e)}void 0!==customYmm.settings&&void 0!==customYmm.settings.hideProductsUntilSelected?customYmm.hideProductsUntilSelected=customYmm.settings.hideProductsUntilSelected:customYmm.hideProductsUntilSelected=!1,customYmm.products={},customYmm.loadMore=!0,customYmm.productsPerPage=12,customYmm.currentPage=1,customYmm.selectedCategories=[],customYmm.selectedBrands=[],customYmm.selectedPrices=[],customYmm.selectedCategory=!1,setDefaultCategory(),retrieveURLparams();var t=e("sq"),t=(null!==t&&(customYmm.searchQuery=t.trim()),customYmm.isInBrandPage&&null!==(t=e("q"))&&customYmm.selectedBrands.push(t.replaceAll("%20"," ")),"search-page-ymm-form-container");let r=!1;(customYmm.isInCategoryPage||customYmm.isInBrandPage||customYmm.isInSearchPage)&&0<customYmm.garage.length?(customYmm.garage.length&&((filteredVehicles=customYmm.garage.filter(e=>e.selected)).length?r=filteredVehicles[0]:!0===customYmm.hideProductsUntilSelected&&(document.getElementById("garage-btn").click(),document.getElementById("add-vehicle-to-garage-button").click())),r&&(ymm=r,customYmm[t].selections={year:ymm.year,make:ymm.make,model:ymm.model,drive_type:ymm.drive_type,fuel_type:ymm.fuel_type,num_doors:ymm.num_doors},manageHighlighted(t))):(customYmm.isInCategoryPage||customYmm.isInSearchPage||customYmm.isInBrandPage)&&!0===customYmm.hideProductsUntilSelected&&document.getElementById("garage-btn").click(),""==customYmm.searchQuery&&!1!==customYmm.hideProductsUntilSelected&&!1===r||fetchProductsAndRender()}function retrieveURLparams(){var e=location.href.split("?");if(1<e.length){var t=e[1].split("/");for(let e=0;e<t.length;e+=2){var r,a=t[e],s=t[e+1];"category"===a?(r="/"+(r=s).replaceAll("%3E","/")+"/",customYmm.selectedCategories.push(r)):"brand"===a||"q"===a&&customYmm.isInBrandPage?customYmm.selectedBrands.push(s.replaceAll("%20"," ")):"prices"===a&&customYmm.selectedPrices.push(s)}0<customYmm.selectedCategories.length&&(customYmm.selectedCategory=customYmm.selectedCategories[customYmm.selectedCategories.length-1])}}function setURLparams(){let e=location.href.split("?")[0],t="";customYmm.selectedCategory&&customYmm.selectedCategories.forEach(e=>{t+=`category/${e.replace(/^\/|\/$/g,"").replace(/\//g,">")}/`}),0<customYmm.selectedBrands.length&&(t+=`brand/${customYmm.selectedBrands.join(",")}/`),0<customYmm.selectedPrices.length&&(t+=`prices/${customYmm.selectedPrices.join(",")}/`),0<t.trim().length&&(e+="?"+t),history.replaceState({},"",e)}function decideWhichPageIsIt(){window.location.href.includes("/products/")?customYmm.isInProductPage=!0:window.location.href.includes("/search/")||window.location.href.includes("/search")?customYmm.isInSearchPage=!0:document.querySelector(customYmm.isInHomePageChecker)?customYmm.isInHomePage=!0:window.location.href.includes("/collections/vendors")?customYmm.isInBrandPage=!0:window.location.href.includes("/collections")&&(customYmm.isInCategoryPage=!0)}initialize();const customYmm={};function returnSiteURL(){var e=window.location.href,e=new URL(e);return e.protocol+"//"+e.hostname}function returnFitsMessage(e){return`
+function displayStars(e){if(0===Math.ceil(e)){var t="";for(i=0;i<5;i++)t+=returnGreyedOutStar()}else{t="";for(i=0;i<Math.ceil(e);i++)t+=returnColorfulStar()}return t}function formatPrice(e){return(e=parseFloat(e))%1!=0?e.toLocaleString(void 0,{minimumFractionDigits:2,maximumFractionDigits:2}):e.toLocaleString(void 0,{minimumFractionDigits:0,maximumFractionDigits:0})}function displayPrices(e,t){return null!==e&&0<e?`
+                <span class="sale-price">$${formatPrice(t)}</span>
+                <span class="compare-at-price ymm-product-price default-price">$${formatPrice(e)}</span>
+            `:`
+                <span class ="sale-price">$${formatPrice(t)}</span>
+            `}async function addToCart(e){e={id:e,quantity:1};try{var t=await fetch("/cart/add.js",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(e)});console.log(t),document.querySelector(".header__icon--cart").click()}catch(e){console.error(e)}}function displayAddToCartButton(e){return customYmm.settings.showButtonsInProductCards?`
+            <div class="add-to-cart-btn">
+                <a href="#" onclick="addToCart(${e})"  data-event-type="product-click" data-button-type="add-cart" class="button button--secondary card-figcaption-button halo-add-to-cart" data-product-id="${e}" data-wait-message="Adding to Cart…">Add to Cart</a>
+            </div>`:""}function displayOrHideStars(e){return void 0!==customYmm.settings.showReviewsInProductCards?`
+                <div class="stars-and-review-count">
+                    <span class="stars">${displayStars(e.reviewsRatingSum)}</span>
+                    <span class="review-count">(${e.reviewCount})</span>    
+                </div>
+            `:""}function returnProductImage(e){return null!=e?`
+                <img class ="ymm-product-thumbnail" src = "${e}"  />
+            `:`
+            <svg class="placeholder-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 525.5 525.5"><path d="M375.5 345.2c0-.1 0-.1 0 0 0-.1 0-.1 0 0-1.1-2.9-2.3-5.5-3.4-7.8-1.4-4.7-2.4-13.8-.5-19.8 3.4-10.6 3.6-40.6 1.2-54.5-2.3-14-12.3-29.8-18.5-36.9-5.3-6.2-12.8-14.9-15.4-17.9 8.6-5.6 13.3-13.3 14-23 0-.3 0-.6.1-.8.4-4.1-.6-9.9-3.9-13.5-2.1-2.3-4.8-3.5-8-3.5h-54.9c-.8-7.1-3-13-5.2-17.5-6.8-13.9-12.5-16.5-21.2-16.5h-.7c-8.7 0-14.4 2.5-21.2 16.5-2.2 4.5-4.4 10.4-5.2 17.5h-48.5c-3.2 0-5.9 1.2-8 3.5-3.2 3.6-4.3 9.3-3.9 13.5 0 .2 0 .5.1.8.7 9.8 5.4 17.4 14 23-2.6 3.1-10.1 11.7-15.4 17.9-6.1 7.2-16.1 22.9-18.5 36.9-2.2 13.3-1.2 47.4 1 54.9 1.1 3.8 1.4 14.5-.2 19.4-1.2 2.4-2.3 5-3.4 7.9-4.4 11.6-6.2 26.3-5 32.6 1.8 9.9 16.5 14.4 29.4 14.4h176.8c12.9 0 27.6-4.5 29.4-14.4 1.2-6.5-.5-21.1-5-32.7zm-97.7-178c.3-3.2.8-10.6-.2-18 2.4 4.3 5 10.5 5.9 18h-5.7zm-36.3-17.9c-1 7.4-.5 14.8-.2 18h-5.7c.9-7.5 3.5-13.7 5.9-18zm4.5-6.9c0-.1.1-.2.1-.4 4.4-5.3 8.4-5.8 13.1-5.8h.7c4.7 0 8.7.6 13.1 5.8 0 .1 0 .2.1.4 3.2 8.9 2.2 21.2 1.8 25h-30.7c-.4-3.8-1.3-16.1 1.8-25zm-70.7 42.5c0-.3 0-.6-.1-.9-.3-3.4.5-8.4 3.1-11.3 1-1.1 2.1-1.7 3.4-2.1l-.6.6c-2.8 3.1-3.7 8.1-3.3 11.6 0 .2 0 .5.1.8.3 3.5.9 11.7 10.6 18.8.3.2.8.2 1-.2.2-.3.2-.8-.2-1-9.2-6.7-9.8-14.4-10-17.7 0-.3 0-.6-.1-.8-.3-3.2.5-7.7 3-10.5.8-.8 1.7-1.5 2.6-1.9h155.7c1 .4 1.9 1.1 2.6 1.9 2.5 2.8 3.3 7.3 3 10.5 0 .2 0 .5-.1.8-.3 3.6-1 13.1-13.8 20.1-.3.2-.5.6-.3 1 .1.2.4.4.6.4.1 0 .2 0 .3-.1 13.5-7.5 14.3-17.5 14.6-21.3 0-.3 0-.5.1-.8.4-3.5-.5-8.5-3.3-11.6l-.6-.6c1.3.4 2.5 1.1 3.4 2.1 2.6 2.9 3.5 7.9 3.1 11.3 0 .3 0 .6-.1.9-1.5 20.9-23.6 31.4-65.5 31.4h-43.8c-41.8 0-63.9-10.5-65.4-31.4zm91 89.1h-7c0-1.5 0-3-.1-4.2-.2-12.5-2.2-31.1-2.7-35.1h3.6c.8 0 1.4-.6 1.4-1.4v-14.1h2.4v14.1c0 .8.6 1.4 1.4 1.4h3.7c-.4 3.9-2.4 22.6-2.7 35.1v4.2zm65.3 11.9h-16.8c-.4 0-.7.3-.7.7 0 .4.3.7.7.7h16.8v2.8h-62.2c0-.9-.1-1.9-.1-2.8h33.9c.4 0 .7-.3.7-.7 0-.4-.3-.7-.7-.7h-33.9c-.1-3.2-.1-6.3-.1-9h62.5v9zm-12.5 24.4h-6.3l.2-1.6h5.9l.2 1.6zm-5.8-4.5l1.6-12.3h2l1.6 12.3h-5.2zm-57-19.9h-62.4v-9h62.5c0 2.7 0 5.8-.1 9zm-62.4 1.4h62.4c0 .9-.1 1.8-.1 2.8H194v-2.8zm65.2 0h7.3c0 .9.1 1.8.1 2.8H259c.1-.9.1-1.8.1-2.8zm7.2-1.4h-7.2c.1-3.2.1-6.3.1-9h7c0 2.7 0 5.8.1 9zm-7.7-66.7v6.8h-9v-6.8h9zm-8.9 8.3h9v.7h-9v-.7zm0 2.1h9v2.3h-9v-2.3zm26-1.4h-9v-.7h9v.7zm-9 3.7v-2.3h9v2.3h-9zm9-5.9h-9v-6.8h9v6.8zm-119.3 91.1c-2.1-7.1-3-40.9-.9-53.6 2.2-13.5 11.9-28.6 17.8-35.6 5.6-6.5 13.5-15.7 15.7-18.3 11.4 6.4 28.7 9.6 51.8 9.6h6v14.1c0 .8.6 1.4 1.4 1.4h5.4c.3 3.1 2.4 22.4 2.7 35.1 0 1.2.1 2.6.1 4.2h-63.9c-.8 0-1.4.6-1.4 1.4v16.1c0 .8.6 1.4 1.4 1.4H256c-.8 11.8-2.8 24.7-8 33.3-2.6 4.4-4.9 8.5-6.9 12.2-.4.7-.1 1.6.6 1.9.2.1.4.2.6.2.5 0 1-.3 1.3-.8 1.9-3.7 4.2-7.7 6.8-12.1 5.4-9.1 7.6-22.5 8.4-34.7h7.8c.7 11.2 2.6 23.5 7.1 32.4.2.5.8.8 1.3.8.2 0 .4 0 .6-.2.7-.4 1-1.2.6-1.9-4.3-8.5-6.1-20.3-6.8-31.1H312l-2.4 18.6c-.1.4.1.8.3 1.1.3.3.7.5 1.1.5h9.6c.4 0 .8-.2 1.1-.5.3-.3.4-.7.3-1.1l-2.4-18.6H333c.8 0 1.4-.6 1.4-1.4v-16.1c0-.8-.6-1.4-1.4-1.4h-63.9c0-1.5 0-2.9.1-4.2.2-12.7 2.3-32 2.7-35.1h5.2c.8 0 1.4-.6 1.4-1.4v-14.1h6.2c23.1 0 40.4-3.2 51.8-9.6 2.3 2.6 10.1 11.8 15.7 18.3 5.9 6.9 15.6 22.1 17.8 35.6 2.2 13.4 2 43.2-1.1 53.1-1.2 3.9-1.4 8.7-1 13-1.7-2.8-2.9-4.4-3-4.6-.2-.3-.6-.5-.9-.6h-.5c-.2 0-.4.1-.5.2-.6.5-.8 1.4-.3 2 0 0 .2.3.5.8 1.4 2.1 5.6 8.4 8.9 16.7h-42.9v-43.8c0-.8-.6-1.4-1.4-1.4s-1.4.6-1.4 1.4v44.9c0 .1-.1.2-.1.3 0 .1 0 .2.1.3v9c-1.1 2-3.9 3.7-10.5 3.7h-7.5c-.4 0-.7.3-.7.7 0 .4.3.7.7.7h7.5c5 0 8.5-.9 10.5-2.8-.1 3.1-1.5 6.5-10.5 6.5H210.4c-9 0-10.5-3.4-10.5-6.5 2 1.9 5.5 2.8 10.5 2.8h67.4c.4 0 .7-.3.7-.7 0-.4-.3-.7-.7-.7h-67.4c-6.7 0-9.4-1.7-10.5-3.7v-54.5c0-.8-.6-1.4-1.4-1.4s-1.4.6-1.4 1.4v43.8h-43.6c4.2-10.2 9.4-17.4 9.5-17.5.5-.6.3-1.5-.3-2s-1.5-.3-2 .3c-.1.2-1.4 2-3.2 5 .1-4.9-.4-10.2-1.1-12.8zm221.4 60.2c-1.5 8.3-14.9 12-26.6 12H174.4c-11.8 0-25.1-3.8-26.6-12-1-5.7.6-19.3 4.6-30.2H197v9.8c0 6.4 4.5 9.7 13.4 9.7h105.4c8.9 0 13.4-3.3 13.4-9.7v-9.8h44c4 10.9 5.6 24.5 4.6 30.2z"></path><path d="M286.1 359.3c0 .4.3.7.7.7h14.7c.4 0 .7-.3.7-.7 0-.4-.3-.7-.7-.7h-14.7c-.3 0-.7.3-.7.7zm5.3-145.6c13.5-.5 24.7-2.3 33.5-5.3.4-.1.6-.5.4-.9-.1-.4-.5-.6-.9-.4-8.6 3-19.7 4.7-33 5.2-.4 0-.7.3-.7.7 0 .4.3.7.7.7zm-11.3.1c.4 0 .7-.3.7-.7 0-.4-.3-.7-.7-.7H242c-19.9 0-35.3-2.5-45.9-7.4-.4-.2-.8 0-.9.3-.2.4 0 .8.3.9 10.8 5 26.4 7.5 46.5 7.5h38.1zm-7.2 116.9c.4.1.9.1 1.4.1 1.7 0 3.4-.7 4.7-1.9 1.4-1.4 1.9-3.2 1.5-5-.2-.8-.9-1.2-1.7-1.1-.8.2-1.2.9-1.1 1.7.3 1.2-.4 2-.7 2.4-.9.9-2.2 1.3-3.4 1-.8-.2-1.5.3-1.7 1.1s.2 1.5 1 1.7z"></path><path d="M275.5 331.6c-.8 0-1.4.6-1.5 1.4 0 .8.6 1.4 1.4 1.5h.3c3.6 0 7-2.8 7.7-6.3.2-.8-.4-1.5-1.1-1.7-.8-.2-1.5.4-1.7 1.1-.4 2.3-2.8 4.2-5.1 4zm5.4 1.6c-.6.5-.6 1.4-.1 2 1.1 1.3 2.5 2.2 4.2 2.8.2.1.3.1.5.1.6 0 1.1-.3 1.3-.9.3-.7-.1-1.6-.8-1.8-1.2-.5-2.2-1.2-3-2.1-.6-.6-1.5-.6-2.1-.1zm-38.2 12.7c.5 0 .9 0 1.4-.1.8-.2 1.3-.9 1.1-1.7-.2-.8-.9-1.3-1.7-1.1-1.2.3-2.5-.1-3.4-1-.4-.4-1-1.2-.8-2.4.2-.8-.3-1.5-1.1-1.7-.8-.2-1.5.3-1.7 1.1-.4 1.8.1 3.7 1.5 5 1.2 1.2 2.9 1.9 4.7 1.9z"></path><path d="M241.2 349.6h.3c.8 0 1.4-.7 1.4-1.5s-.7-1.4-1.5-1.4c-2.3.1-4.6-1.7-5.1-4-.2-.8-.9-1.3-1.7-1.1-.8.2-1.3.9-1.1 1.7.7 3.5 4.1 6.3 7.7 6.3zm-9.7 3.6c.2 0 .3 0 .5-.1 1.6-.6 3-1.6 4.2-2.8.5-.6.5-1.5-.1-2s-1.5-.5-2 .1c-.8.9-1.8 1.6-3 2.1-.7.3-1.1 1.1-.8 1.8 0 .6.6.9 1.2.9z"></path></svg>
+        `}function displayBrand(e){return customYmm.settings.showBrandInProductCards?`
+                <div class="brand-name">
+                    ${e}
+                </div>        
+            `:""}function constructProductDiv(e){var t=customYmm.settings.productCardImageAspectRatio;return t.length&&(t="4:3"==t?"card_ratio_4_3":"1:1"==t?"card_ratio_1_1":""),`
+            <div class = "product">
+                
+                <div class="ymm-product-wrapper ymm-product-item">
+                    <div class="ymm-product-wrapper-holder">
+                        <a href = "${customYmm.siteURL}/products/${e.url}/">
+                            <div class  = "ymm-product-thumbnail-wrapper ${t}">
+                               ${returnProductImage(e.thumbnail)}
+                            </div>
+                         </a>
+                        <div class="ymm-product-wrapper-item">
+                            <div class = "ymm-product-name-price">
+                                
+                                ${displayBrand(e.brand)}
+                                
+                                <div class= "ymm-product-name">
+                                     <a href = "${customYmm.siteURL}/products/${e.url}/">
+                                        ${e.name}
+                                    </a>
+                                </div>
+                                
+
+                                <div class="sale-and-default-price">
+                                    
+                                    ${displayPrices(e.compare_at_price,e.price)}
+            
+                                </div>
+                            </div>
+                    
+                            <div class="product-action-buttons">
+                                 ${displayAddToCartButton(e.variant_id)} 
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        
+         `}function renderProducts(e,t=0){document.querySelector(".ymm-products").innerHTML="",document.querySelector(".no-results-message-outer").innerHTML="",document.querySelector(".search-results-count").innerHTML="",0<customYmm.searchResultsCount?(document.querySelector(".search-results-count").innerHTML=generateProductRangeText(),document.querySelector(".ymm-products").innerHTML=e.map(e=>constructProductDiv(e)).join("")):document.querySelector(".no-results-message-outer").innerHTML=`
+                <div class="no-results-message">
+                    <p class="no-results-msg-inner">
+                        No any products exist for this filter combination.
+                        <br>
+                        <a href = "${customYmm.siteURL}/search/">Please Click Here</a> to find all the parts that fit your selection or <a href="#"> ${returnClearAllText()} </a> filters.
+                    </p>
+                </div>
+            `}function createBrandItem(e){return`
+            <div class="input-and-label">
+                <input ${customYmm.isInBrandPage?"disabled":""} ${customYmm.selectedBrands.includes(e.name)?"checked":""} name = "cb-filter" data-filter-type = "brand" class = "cb-filter" type = "checkbox" data-brand-id = "${e.id}" id = "cb-${e.id}" data-term = "${e.name}" >
+                <label for  = "cb-${e.id}" class="form-label--checkbox">
+                    <span class="brand-name">${e.name}</span>
+                    <span class="brand-hits">${e.hits}</span>
+                </label>
+            </div>
+        `}function returnSelectionsForBreadCrumb(){var[e,t,r,a]=returnSelections("search-page-ymm-form-container");return`
+            <h4>${e||""} ${t||""} ${r||""} ${a} </h4>
+        `}function displayBreadCrumb(){var e,t;customYmm.isInSearchPage?(e=[],(t=customYmm.searchQuery).length&&e.push('"'+t+'"'),document.querySelector("#ymm-breadcrumb").innerHTML=e.length?`
+                    <div class="category-title heading-custom"><h1>Search results for ${e.join(" for ")}</h1></div> 
+                `:'<div class="category-title heading-custom"><h1>Search Results</h1></div>'):(customYmm.isInCategoryPage||customYmm.isInBrandPage)&&(document.querySelector("#ymm-breadcrumb").innerHTML=`
+                 <div class="category-title heading-custom"><h1>${document.querySelectorAll(".bd-title")[document.querySelectorAll(".bd-title").length-1].innerText}</h1></div> 
+            `)}function showLoadingOverlay(){var e=document.createElement("div");e.innerHTML=`
+    <div class="loadingOverlay loadingOverlay2" style = "display:block;background-color: rgba(0, 0, 0, 0.03)">
+        <div class = "loadingIcon loadingText">
+            <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+            </svg>
+        </div>
+    </div>
+    `,document.body.appendChild(e.firstElementChild)}function hideLoadingOverlay(){var e=document.querySelector(".loadingOverlay2");e&&e.parentNode.removeChild(e)}function removeAllFilters(){customYmm.selectedCategories.length&&removeSelectedCategory(customYmm.selectedCategories[0]),removeSelectedBrand(),removeSelectedPrice(),customYmm.searchQuery="",fetchProductsAndRender()}function returnClearAllText(){return customYmm.selectedPrices.length||customYmm.selectedBrands.length||customYmm.searchQuery.length||!customYmm.isInCategoryPage&&customYmm.selectedCategories.length?'<span class="remove-all" onclick="removeAllFilters()">Clear All</span>':'<span class="disabled remove-all">Clear All</span>'}function returnFiltersWrappers(){return`
+
+        <div class="ymm-filters">
+            
+
+            <div class="ymm-brands-wrapper ymm-filters-wrapper-inner">
+                
+                <div class="filters-heading">
+                    <h2 class="h2">FILTER BY</h2>
+                </div>
+                <div class="ymm-all-filters">
+                
+                    <div class="ymm-categories ymm-filter-item">
+                        
+                    </div>
+    
+                    <div class = "ymm-brands ymm-filter-item">
+                        
+                    </div>
+    
+                    <div class="ymm-price ymm-filter-item">
+                        
+                    </div>
+                
+                </div>
+                
+            </div>
+            
+            <div>
+                ${returnClearAllText()}
+            </div>
+
+        </div>
+
+        <a href="#" class="close-mobile-filter" onclick="hideOrShowMobileFilter()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path d="M 38.982422 6.9707031 A 2.0002 2.0002 0 0 0 37.585938 7.5859375 L 24 21.171875 L 10.414062 7.5859375 A 2.0002 2.0002 0 0 0 8.9785156 6.9804688 A 2.0002 2.0002 0 0 0 7.5859375 10.414062 L 21.171875 24 L 7.5859375 37.585938 A 2.0002 2.0002 0 1 0 10.414062 40.414062 L 24 26.828125 L 37.585938 40.414062 A 2.0002 2.0002 0 1 0 40.414062 37.585938 L 26.828125 24 L 40.414062 10.414062 A 2.0002 2.0002 0 0 0 38.982422 6.9707031 z"></path></svg>
+        </a>
+    `}function returnArrowLeft(){return`
+<svg xmlns="http://www.w3.org/2000/svg" width="18" height="2.769" viewBox="0 0 18 2.769">
+  <path id="minus-solid" d="M34,225.385a1.383,1.383,0,0,1-1.385,1.385H17.385a1.385,1.385,0,1,1,0-2.769H32.615A1.383,1.383,0,0,1,34,225.385Z" transform="translate(-16 -224)" fill="#050505"/>
+</svg>     `}function returnArrowDown(){return`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/></svg>   `}function hideOrShowCollapsibleContent(e){var e=e.target.closest(".collapsible-wrapper"),t=e.querySelector(".collapsible-content"),r=window.getComputedStyle(t),e=e.querySelector(".collapsible-toggle-icon");"none"===r.display?(t.style.display="block",e.innerHTML=returnArrowLeft()):(t.style.display="none",e.innerHTML=returnArrowDown())}function removeSelectedCategory(e){customYmm.isInCategoryPage||(e=customYmm.selectedCategories.indexOf(e),console.log(customYmm.selectedCategories,"1"),customYmm.selectedCategories.splice(e),console.log(customYmm.selectedCategories,"2"),customYmm.selectedCategories.length?customYmm.selectedCategory=customYmm.selectedCategories[customYmm.selectedCategories.length-1]:customYmm.selectedCategory="")}function removeSelectedBrand(){customYmm.isInBrandPage||(customYmm.selectedBrands=[])}function removeSelectedPrice(){customYmm.selectedPrices=[]}function removeSelectedQuery(){customYmm.searchQuery="",fetchProductsAndRender()}const handleSortByChange=e=>{customYmm.sortBy=e.target.value,fetchProductsAndRender()};function fillupFiltersWrappers(){document.querySelector(".ymm-filters-selections")&&(document.querySelector(".ymm-filters-selections").innerHTML="",customYmm.searchQuery.trim().length&&(document.querySelector(".ymm-filters-selections").innerHTML+=`
+                <div class="filter-item-wrapper" onclick="removeSelectedQuery()">
+                    <span>
+                        <strong>Query:</strong> 
+                        <span class="query-name filter-name">${customYmm.searchQuery}</span>
+                    </span>
+                    <span class='close-icon'>
+                        ${returnCloseIcon()}
+                    </span>
+                </div>
+            `),customYmm.selectedCategories&&(document.querySelector(".ymm-filters-selections").innerHTML+=customYmm.selectedCategories.map(e=>`
+                                                    <div class="filter-item-wrapper category-name-wrapper ${customYmm.isInCategoryPage?"greyed-out":""}" 
+                                                        onclick="removeSelectedCategory('${e}');fetchProductsAndRender()">
+                                                        <span>
+                                                            <strong>Category:</strong> 
+                                                            <span class="category-name filter-name"> ${customYmm.selectedCategoryURLVsName[e]||e.replaceAll("/"," ").trim()}</span>
+                                                        </span>
+                                                        <span class="close-icon">${customYmm.isInCategoryPage?"":returnCloseIcon()}</span>
+                                                    </div>
+                                                `).join("")),customYmm.selectedBrands.length&&(document.querySelector(".ymm-filters-selections").innerHTML+=customYmm.selectedBrands.map(e=>`
+                                                    <div class="brand-name-wrapper ${customYmm.isInBrandPage?"greyed-out":""} filter-item-wrapper" onclick="removeSelectedBrand();fetchProductsAndRender()">
+                                                        <span>
+                                                            <strong>Brand:</strong> 
+                                                            <span class="brand-name filter-name"> ${e}</span>
+                                                        </span>
+                                                        <span class="close-icon">
+                                                            ${customYmm.isInBrandPage?"":returnCloseIcon()}
+                                                        </span>
+                                                    </div>
+                                                `).join("")),customYmm.selectedPrices.length)&&(document.querySelector(".ymm-filters-selections").innerHTML+=customYmm.selectedPrices.map(e=>`
+                                                    <div class="price-name-wrapper filter-item-wrapper" onclick="removeSelectedPrice();fetchProductsAndRender()">
+                                                        <span>
+                                                            <strong>Price:</strong> 
+                                                            <span class="price-name filter-name"> ${customYmm.priceIdsAndLabels[e]||e}</span>
+                                                        </span>
+                                                        <span class="close-icon"">
+                                                            ${returnCloseIcon()}
+                                                        </span>
+                                                    </div>
+                                                `).join("")),document.querySelector(".ymm-brands")&&customYmm.brands&&(brandData=customYmm.brands,document.querySelector(".ymm-brands").innerHTML=`
+            <div class="collapsible-wrapper">
+                <div class="collapsible-title-icon" onclick="hideOrShowCollapsibleContent(event)">
+                    <h3>Brand</h3>
+                    <div class="collapsible-toggle-icon" >${returnArrowLeft()}</div>
+                </div>
+                <div class="collapsible-content">
+                    ${brandData.map(e=>createBrandItem(e)).join(" ")}
+                </div>
+            </div>
+        `);var e=customYmm.categories;e?(displayCategories(e),displayPriceRanges(),assignListenerToTheCheckBoxes()):document.querySelector(".ymm-filters-selections").innerHTML="";document.querySelector(".sort-by").innerHTML=`
+        <div class="sort-by-wrapper-inner">
+            <select class="sort-by-select select" onChange="handleSortByChange(event)">
+                ${[{value:"default",label:"Default"},{value:"price-low-to-high",label:"Price Low to High"},{value:"price-high-to-low",label:"Price High to Low"},{value:"title-a-to-z",label:"Title A to Z"},{value:"title-z-to-a",label:"Title Z to A"}].map(({value:e,label:t})=>`
+                            <option value="${e}" ${e===customYmm.sortBy?"selected":""}>${t}</option>
+                        `).join(" ")}
+            </select>
+        </div>
+    `}function displayResponsiveFilters(){(customYmm.isInCategoryPage||customYmm.isInSearchPage||customYmm.isInBrandPage)&&(1024<window.innerWidth?(console.log("display only in desktop "),document.querySelector(customYmm.filtersWrapperDesktop).innerHTML=returnFiltersWrappers(),document.querySelector(customYmm.filtersWrapperMobile).innerHTML=""):(console.log("display only in mobile"),document.querySelector(customYmm.filtersWrapperDesktop).innerHTML="",document.querySelector(customYmm.filtersWrapperMobile).innerHTML=returnFiltersWrappers()),fillupFiltersWrappers())}function clearContentsForCategoryPage(){document.querySelector(".ymm-filters-products").style.display="none"}function fetchPreviousPage(){--customYmm.currentPage,fetchProductsAndRender()}function fetchNextPage(){customYmm.currentPage+=1,fetchProductsAndRender()}function fetchNewData(e){customYmm.currentPage=e,fetchProductsAndRender()}function returnPreviousIcon(){return`
+            <svg width="8" height="14" viewBox="0 0 8 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6.99979 14C7.26498 13.9999 7.51929 13.8945 7.70679 13.707C7.89426 13.5195 7.99957 13.2652 7.99957 13C7.99957 12.7348 7.89426 12.4805 7.70679 12.293L2.41179 7L7.70679 1.707C7.89426 1.51947 7.99957 1.26516 7.99957 0.999996C7.99957 0.734832 7.89426 0.480524 7.70679 0.292996C7.51926 0.105525 7.26495 0.000209808 6.99979 0.000209808C6.73462 0.000209808 6.48031 0.105525 6.29279 0.292996L0.292787 6.293C0.105316 6.48052 0 6.73483 0 7C0 7.26516 0.105316 7.51947 0.292787 7.707L6.29279 13.707C6.38539 13.8002 6.49557 13.874 6.61693 13.9243C6.73829 13.9746 6.86842 14.0004 6.99979 14Z" fill="white"/>
+            </svg>
+        `}function returnNextIcon(){return`
+            <svg width="8" height="14" viewBox="0 0 8 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0.999847 13.9998C0.734653 13.9997 0.48034 13.8943 0.292847 13.7068C0.105376 13.5193 6.10352e-05 13.265 6.10352e-05 12.9998C6.10352e-05 12.7346 0.105376 12.4803 0.292847 12.2928L5.58785 6.99979L0.292847 1.70679C0.105376 1.51926 6.10352e-05 1.26495 6.10352e-05 0.999786C6.10352e-05 0.734622 0.105376 0.480314 0.292847 0.292787C0.480375 0.105316 0.734683 0 0.999847 0C1.26501 0 1.51932 0.105316 1.70685 0.292787L7.70685 6.29279C7.89432 6.48031 7.99963 6.73462 7.99963 6.99979C7.99963 7.26495 7.89432 7.51926 7.70685 7.70679L1.70685 13.7068C1.61424 13.8 1.50407 13.8738 1.38271 13.9241C1.26135 13.9744 1.13122 14.0001 0.999847 13.9998Z" fill="white"/>
+            </svg>
+        `}function generatePagination(t,e,r){console.log(t,e,r);var a=Math.ceil(r/e),s=window.innerWidth<768?0:2,o=[];if(1<t&&o.push({label:"Previous",page:t-1}),a<=(totalPagesThreshold=window.innerWidth<768?3:6))for(let e=1;e<=a;e++)o.push({label:String(e),page:e});else{for(let e=Math.max(1,t-s);e<=Math.min(a,t+s);e++)o.push({label:String(e),page:e});t+s<a&&(o.push({label:"...",disabled:!0}),o.push({label:String(a),page:a}))}return t<a&&o.push({label:"Next",page:t+1}),console.log(o),`
+        <ul class="pagination">
+            ${o.map(e=>`
+            <li 
+                class="pagination-link ${customYmm.currentPage==e.page?"active":""} ${"Previous"==e.label||"Next"==e.label?"pagination-btn":""} ${"..."==e.label?"disabled":""}"
+                onclick="${"..."!=e.label&&customYmm.currentPage!=e.page?"fetchNewData("+e.page+")":""} "
+            >
+                ${"Previous"==e.label?returnPreviousIcon():"Next"==e.label?returnNextIcon():e.label}
+            </li>
+        `).join("")}
+        </ul>
+        <div class="search-results-count">
+            ${generateProductRangeText()}
+        </div>
+    `}function setSelectedVehicleWithCategoryTitle(){var e,t,r="search-page-ymm-form-container",[a,s,o,,]=returnSelections(r);customYmm.isInCategoryPage&&document.querySelector(".page-listing-header--content")&&(e=document.querySelector(".page-listing-header--content")).querySelector("h1.page-heading")&&(t=(e=e.querySelector("h1.page-heading")).innerText,null==customYmm.originalCateogry&&(customYmm.originalCateogry=t),e.innerText=a&&o&&s?returnSelections(r).join(" ")+" "+customYmm.originalCateogry:customYmm.originalCateogry)}function generateProductRangeText(){if(0==customYmm.searchResultsCount)return"";currentPage=customYmm.currentPage,totalResults=customYmm.searchResultsCount,productsPerPage=12;var e=(currentPage-1)*productsPerPage+1,t=currentPage*productsPerPage;return`<span class="results-range">${e}-${t>totalResults?totalResults:t}</span>`+` of <span class="total-results"> ${totalResults} </span> products`}function fetchProductsAndRender(r=!1){const a="search-page-ymm-form-container";let[s,o,c,e]=returnSelections(a);showLoadingOverlay(),fetch(`${customYmm.searchDataApi}?sortby=${customYmm.sortBy}&sub_model=${e}&searchQuery=${customYmm.searchQuery}&year=${customYmm[a].selections.year}&make=${customYmm[a].selections.make}&model=${customYmm[a].selections.model}&category=${customYmm.selectedCategory}&page=${customYmm.currentPage}&limit=${customYmm.productsPerPage}&brands=${customYmm.selectedBrands.join(",")}&prices=`+customYmm.selectedPrices.join(",")).then(e=>e.json()).then(e=>{var t;console.log("helloosdfsdfhsf"),hideLoadingOverlay(),customYmm.searchResultsCount=e.count,displayMakesAndModels(e,a),hideOrShowFormAfterLoadingDropdownValues(e,a),setSelectedVehicleWithCategoryTitle(),!customYmm.isInCategoryPage||s&&c&&o||!customYmm.hideProductsUntilSelected?(document.querySelector(".ymm-filters-products").style.display="flex",t=e.products,r||(customYmm.products={}),t.forEach(e=>{customYmm.products[""+e.id]=e}),customYmm.allCounts=e.count,renderProducts(e.products,r),document.querySelector(".loading-indicator").innerHTML=generatePagination(customYmm.currentPage,12,customYmm.searchResultsCount),e.products.length==customYmm.productsPerPage?customYmm.loadMore=!0:customYmm.loadMore=!1,customYmm.categories=e.categories,customYmm.brands=e.brands,customYmm.priceRanngesVsFrequency=e.priceRanngesVsFrequency,displayResponsiveFilters(),document.querySelector(".ymm-change-or-clear__title").innerHTML=`
+                    ${returnSelectionsForBreadCrumb()}
+                `,displayBreadCrumb(),scrollToTop()):console.log("returning because in category page and something is not set")}).catch(e=>{hideLoadingOverlay()})}function scrollToTop(){window.scrollTo({top:0,behavior:"smooth"})}function displayPriceRanges(){const r=customYmm.priceIdsAndLabels;document.querySelector(".ymm-price").innerHTML=`
+        
+            <div class="collapsible-wrapper">
+                <div  class="collapsible-title-icon" onclick="hideOrShowCollapsibleContent(event)">
+                    <h3>Price</h3>
+                    <div class="collapsible-toggle-icon" >${returnArrowLeft()}</div>
+                </div>
+                <div class="collapsible-content">
+                    ${Object.keys(r).filter(e=>0<customYmm.priceRanngesVsFrequency[e]).map(e=>{return t=e,e=r[e],`
+                <div class="input-and-label">
+                    <input ${customYmm.selectedPrices.includes(t)?"checked":""} data-term = "${t}" name = "cb-filter" data-filter-type = "price" class = "cb-filter" type = "checkbox" data-price-id = "${t}" id = "cb-${t}">
+                    <label for  = "cb-${t}" class="form-label--checkbox">
+                        
+                        <span class="brand-name">${e}</span>
+                        <span class="brand-hits">${customYmm.priceRanngesVsFrequency[t]}</span>                        
+                            
+                    </label>
+                </div>
+            `;var t}).join(" ")}
+                </div>
+            </div>
+        `}function convertArrayOrObjectToArray(e){if(Array.isArray(e))return e;var t,r=[];for(t in e)r.push(e[t]);return r}function filterProductsByBrandIds(r,t){return Object.keys(r).filter(e=>null!=r[e].brand&&t.includes(r[e].brand.pid.toString())).reduce((e,t)=>(e[t]=r[t],e),{})}function returnUniqueObjects(e){const t=new Set;return e.filter(e=>{e=e.id;return!t.has(e)&&(t.add(e),!0)})}function renderCheckbox(e){return`
+            
+            <input 
+            
+                id = "shop-by-category-${e.url}"
+                ${customYmm.isInCategoryPage&&0==e.parent_id?"disabled":""} 
+                type = "checkbox" 
+                data-filter-type = "category"
+                name = "shop-by-category"
+                data-term = "${e.url}"
+                data-category-name='${e.name.trim()}'
+                class  = "cb-filter" 
+                data-category-url = "${e.url}"
+                ${customYmm.selectedCategories.includes(e.url)?"checked":""} 
+            
+            />
+            
+        `}function displayEachCategory(e){return`
+            <div class="ymm-categories-item">
+                ${renderCheckbox(e)}
+
+                <label for="shop-by-category-${e.url}" class="form-label--checkbox">
+                    <span class="category-name">${e.name}</span>
+                    <span class="category-hits">${e.hits}</span>
+                </label>
+            </div>    
+        `}function retrieveURLparams(){var e=window.location.href;let t=e.split("?")[0];var e=new URL(e),r=e.protocol,e=e.hostname,a=(t=t.replaceAll(r+"//"+e+"/","")).split("/");console.log(a);for(let t=0;t<a.length;t+=2){var s,o,c,m=a[t];let e=a[t+1];console.log("keybalur"),console.log(m,e),"category"===m?(s=(s=e).replaceAll("%3E","/"),customYmm.selectedCategory=s,customYmm.selectedCategories.push(s)):"brand"===m||"q"===m&&customYmm.isInBrandPage?customYmm.selectedBrands.push(e.replaceAll("_"," ")):"prices"===m?customYmm.selectedPrices.push(e):"v"===m&&([s=!1,m=!1,o=!1,c=""]=(e=e.replaceAll("%3E",">")).split(">").map(e=>e.replaceAll("_"," ")),customYmm["search-page-ymm-form-container"].selections={year:s,make:m,model:o,sub_model:c},manageHighlighted("search-page-ymm-form-container"))}0<customYmm.selectedCategories.length&&(customYmm.selectedCategory=customYmm.selectedCategories[customYmm.selectedCategories.length-1])}function setURLparams(){var t=window.location.href,t=new URL(t);t.protocol,t.hostname;let r="";if(customYmm.selectedCategory&&customYmm.selectedCategories.forEach(e=>{r+=`category/${e.replace(/^\/|\/$/g,"").replace(/\//g,">")}/`}),0<customYmm.selectedBrands.length&&(r+=`brand/${customYmm.selectedBrands.map(e=>e.replaceAll(" ","_")).join(",")}/`),0<customYmm.selectedPrices.length&&(r+=`prices/${customYmm.selectedPrices.join(",")}/`),customYmm.isInCategoryPage||customYmm.isInSearchPage){var[t,a,s,o]=returnSelections("search-page-ymm-form-container");let e=[t,a,s,o];(e=e.filter(e=>!1!==e&&""!==e).map(e=>e.replaceAll(" ","_"))).length&&(r+=`v/${e.join(">")}/`)}0<r.trim().length&&r}function assignListenerToTheCheckBoxes(){const t=document.querySelectorAll(".cb-filter");function r(e){customYmm.currentPage=1,customYmm.loadMore=!0,"category"==e.target.getAttribute("data-filter-type")&&uncheckSiblingsAndHideChildren(e.target);e=Array.from(t).filter(e=>e.checked);const a=[];let s=[],o=[];e.forEach(e=>{switch(e.getAttribute("data-filter-type")){case"category":var t=e.getAttribute("data-category-url"),r=e.getAttribute("data-category-name");s.push(t),customYmm.selectedCategoryURLVsName[t]=r;break;case"brand":a.push(e.getAttribute("data-term"));break;case"price":o.push(e.getAttribute("data-term"))}}),customYmm.selectedCategories=s,customYmm.selectedBrands=a,customYmm.selectedPrices=o,0<s.length?customYmm.selectedCategory=s[s.length-1]:(customYmm.selectedCategory=!1,setDefaultCategory()),setURLparams(),fetchProductsAndRender()}t.forEach(e=>{e.addEventListener("change",r)})}function convertCategoriesToHierarchialForm(e){const r={},a=[];return e.forEach(e=>{e.children=[],r[e.id]=e}),e.forEach(e=>{var t;0===parseInt(e.parent_id)?a.push(e):(t=r[e.parent_id])&&t.children.push(e)}),a}function displayCategories(e){0<e.length&&(e=e,document.querySelector(".ymm-categories").innerHTML=`
+                <div class="collapsible-wrapper">
+                    <div class="collapsible-title-icon" onclick="hideOrShowCollapsibleContent(event)" >
+                        <h3>Category</h3>
+                        <div class="collapsible-toggle-icon">${returnArrowLeft()}</div>
+                    </div>
+                    <div class="collapsible-content">
+                        <ul id="tree" class="tree"></ul>
+                    </div>
+                </div>
+            `,renderTree(e,document.getElementById("tree")))}function renderTree(e,a){e.forEach(e=>{var t,r=document.createElement("li");r.innerHTML=displayEachCategory(e),a.appendChild(r),0<e.children.length&&((t=document.createElement("ul")).className=`tree  ${customYmm.selectedCategories.includes(e.url)?"":"hidden"} `,r.appendChild(t),renderTree(e.children,t))})}function uncheckSiblingsAndHideChildren(e){function r(e){e=e.querySelector("ul");e&&(e.classList.add("hidden"),e.querySelectorAll('input[type="checkbox"]').forEach(e=>{e.checked=!1}))}const a=e.closest("li");a&&Array.from(a.parentElement.children).forEach(e=>{var t;e!==a&&((t=e.querySelector('input[type="checkbox"]'))&&(t.checked=!1),r(e))}),e.checked||e.closest("li").querySelector("ul")&&(e.closest("li").querySelector("ul").classList.add("hidden"),r(e.closest("li")))}function createFiltersMobileWrapperAndAppend(){var e=document.createElement("div");e.id="filters-wrapper-mobile",e.className=customYmm.filtersWrapperMobileSidebarClass,document.body.appendChild(e)}window.onresize=function(){console.log("reeized"),displayResponsiveFilters()};const customYmm={};function returnSiteURL(){var e=window.location.href,e=new URL(e);return e.protocol+"//"+e.hostname}function returnFitsMessage(e){return`
 
             <div class="verify-fitment verify-fitment_fitment_fit">
                 <div class="verify-fitment_icon">
@@ -43,13 +310,13 @@ async function loadSettingsFile(){customYmm.settingsURL="https://auto.searchalyt
                 </div>
             </div>
                               
-        `}function displayFitmentResult(e){let[r,a,s,o,c,m]=returnSelections(e),n=(carrySelectedVehicle(),!1);e=document.querySelector(".fitment-result");customYmm.fitmentData.forEach((e,t)=>{!(r>=parseInt(e.from_year)&&r<=parseInt(e.to_year)&&a==e.make.trim()&&s==e.model.trim())||""!=o&&""!=e.drive_type.trim()&&o!=e.drive_type.trim()||""!=c&&""!=e.fuel_type.trim()&&c!=e.fuel_type.trim()||""!=m&&""!=e.num_doors.trim()&&m!=e.num_doors.trim()||(n=!0)}),n?(document.querySelector("#form-action-addToCart")&&(document.querySelector("#form-action-addToCart").disabled=!1,document.querySelector("#form-action-addToCart").style.cursor="pointer",document.querySelector("#form-action-addToCart").style.opacity="1"),e.innerHTML=returnFitsMessage(`
+        `}function displayFitmentResult(e){let[r,a,s,o]=returnSelections(e),c=(carrySelectedVehicle(),!1);e=document.querySelector(".fitment-result");customYmm.fitmentData.forEach((e,t)=>{r>=parseInt(e.from_year)&&r<=parseInt(e.to_year)&&a==e.make.trim()&&s==e.model.trim()&&(""==o||""==e.sub_model.trim()||o==e.sub_model.trim())&&(c=!0)}),c?(document.querySelector("#form-action-addToCart")&&(document.querySelector("#form-action-addToCart").disabled=!1,document.querySelector("#form-action-addToCart").style.cursor="pointer",document.querySelector("#form-action-addToCart").style.opacity="1"),e.innerHTML=returnFitsMessage(`
                     <span class="selected-ymm selected-ymm-vq"> 
                         <span class="selected-ymm-ymm">
                             ${r} ${a} ${s}
                         </span>
                         <span class="selected-vq">
-                            ${o} ${c} ${m}
+                            ${o}
                         </span>
                     </span>
                 `)):(document.querySelector("#form-action-addToCart")&&(document.querySelector("#form-action-addToCart").disabled=!0,document.querySelector("#form-action-addToCart").style.cursor="no-drop",document.querySelector("#form-action-addToCart").style.opacity="0.3"),e.innerHTML=returnDoesNotFitMessage(`
@@ -58,20 +325,74 @@ async function loadSettingsFile(){customYmm.settingsURL="https://auto.searchalyt
                         ${r} ${a} ${s}
                     </span>
                     <span class="selected-vq">
-                        ${o} ${c} ${m}
+                        ${o} 
                     </span>
                 </span>
-            `))}function saveOrGoforProductPage(e){pushToGarage(e),setupGarage(!1),hideYMMFformFromBody(),displayFitmentResult(e)}customYmm.sortBy="default",customYmm.priceIdsAndLabels={"*-50":"$50 and less","50-100":"$50 to $100","100-250":"$100 to $250","250-500":"$250 to $500","500-1000":"$500 to $1000","1000-*":"$1000 and more"},customYmm.development="production",customYmm.siteURL=returnSiteURL(),"local"==customYmm.development?(customYmm.ymmOnlyApi="provide-ymm-data-only.php",customYmm.fitmentDataApi="provide-fitment-data.php",customYmm.searchDataApi="search.php",customYmm.linkToCssFile="style.css"):(customYmm.selectedCategoryURLVsName={},customYmm.ymmDomain="https://auto.searchalytics.com/suspension-bros/integration",customYmm.ymmOnlyApi=customYmm.ymmDomain+"/provide-ymm-data-only.php",customYmm.fitmentDataApi=customYmm.ymmDomain+"/provide-fitment-data.php",customYmm.searchDataApi=customYmm.ymmDomain+"/search.php",customYmm.linkToCssFile="https://apps.cartmade.com/arjun/suspension-bros/auto_search_suspension_bros.css",customYmm.subCategoryAPI=customYmm.ymmDomain+"/provideSubCategories.php"),customYmm.isInHomePage=!1,customYmm.isInProductPage=!1,customYmm.isInCategoryPage=!1,customYmm.isInBrandPage=!1,customYmm.isInSearchPage=!1,customYmm.productPageWrapper="#seach_auto_fitment_verification",customYmm.homePageWrapper="#suspensionbroshomewrapper",customYmm.searchPageWrapper="#searchpagewrapper",customYmm.subCatContainerForCategoryPage="#subcats-container",customYmm.categoryPageWrapper="#searchpagewrapper",customYmm.brandPageWrapper="#searchpagewrapper",customYmm.garageButtonWrapper=".menu-icons-wrap",customYmm.garageButtonWrapperMobile=".section-header-mobile",customYmm.quickSearchWrapper=".search-modal__content",customYmm.searchQuery="",customYmm.fitmentTableWrapper="#tab-custom-tab-fitment-mobile",customYmm.fitmentTabLinkWrapper=".productView-bottom .tabs",customYmm.isInHomePageChecker="#suspensionbroshomewrapper",customYmm.filtersWrapperMobile="#filters-wrapper-mobile",customYmm.filtersWrapperDesktop="#filters-wrapper-desktop",customYmm.filtersWrapperMobileSidebarClass="halo-sidebar halo-sidebar-left",createFiltersMobileWrapperAndAppend(),customYmm.svgCross=`<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <g clip-path="url(#clip0_5_22)">
-        <path d="M19.408 3.41599C19.5938 3.23017 19.7412 3.00957 19.8418 2.76678C19.9423 2.524 19.9941 2.26378 19.9941 2.00099C19.9941 1.7382 19.9423 1.47799 19.8418 1.2352C19.7412 0.992413 19.5938 0.771811 19.408 0.585991C19.2222 0.40017 19.0016 0.252772 18.7588 0.152206C18.516 0.0516411 18.2558 -0.00012207 17.993 -0.00012207C17.7302 -0.00012207 17.47 0.0516411 17.2272 0.152206C16.9844 0.252772 16.7638 0.40017 16.578 0.585991L9.99999 7.17499L3.41599 0.591988C3.04071 0.216706 2.53172 0.00587462 2.00099 0.00587463C1.47026 0.00587464 0.961271 0.216706 0.58599 0.591988C0.210709 0.967269 -0.000122059 1.47626 -0.00012207 2.00699C-0.000122081 2.53772 0.210709 3.04671 0.58599 3.42199L7.17499 9.99999L0.59199 16.584C0.216709 16.9593 0.00587792 17.4683 0.00587793 17.999C0.00587795 18.5297 0.216709 19.0387 0.59199 19.414C0.967272 19.7893 1.47626 20.0001 2.00699 20.0001C2.53772 20.0001 3.04671 19.7893 3.42199 19.414L9.99999 12.83L16.584 19.408C16.7698 19.5938 16.9904 19.7412 17.2332 19.8418C17.476 19.9423 17.7362 19.9941 17.999 19.9941C18.2618 19.9941 18.522 19.9423 18.7648 19.8418C19.0076 19.7412 19.2282 19.5938 19.414 19.408C19.5998 19.2222 19.7472 19.0016 19.8478 18.7588C19.9483 18.516 20.0001 18.2558 20.0001 17.993C20.0001 17.7302 19.9483 17.47 19.8478 17.2272C19.7472 16.9844 19.5998 16.7638 19.414 16.578L12.83 9.99999L19.408 3.41599Z" fill="#C2C2C2"/>
-        </g>
-        <defs>
-        <clipPath id="clip0_5_22">
-        <rect width="20" height="20" fill="white"/>
-        </clipPath>
-        </defs>
-        </svg>
-`,getCookie("garage")?customYmm.garage=JSON.parse(getCookie("garage")):customYmm.garage=[];const decideWhatHappensAfterFormChangeInProductPage=async e=>{var[t,r,a,s,o,c]=returnSelections(e),m=await fetchYmmOnlyDataAndRender(e);m.drive_type_arr=m.drive_type_arr.filter(e=>""!==e),m.fuel_type_arr=m.fuel_type_arr.filter(e=>""!==e),m.num_doors_arr=m.num_doors_arr.filter(e=>""!==e),manageHighlighted(e),m.makes.length&&0==r||m.models.length&&0==a||isDriveTypeExists()&&m.drive_type_arr.length&&""==s||isFuelTypeExists()&&m.fuel_type_arr.length&&""==o||isNumDoorsExists()&&m.num_doors_arr.length&&""==c||0==r||0==t||0==a?(document.querySelector("#form-action-addToCart")&&(document.querySelector("#form-action-addToCart").disabled=!0,document.querySelector("#form-action-addToCart").style.cursor="no-drop",document.querySelector("#form-action-addToCart").style.opacity="0.3"),displayYMMformFromBody()):(enableSelectTag(e,"btn-go"),saveOrGoforProductPage(e),removeHighlighted(e))};function createRequiredWrappersForProductPage(){var e=document.querySelector(customYmm.productPageWrapper),t=document.createElement("div");t.className="form-fitment-wrapper",e.appendChild(t),t.innerHTML=`
+            `))}function saveOrGoforProductPage(e){pushToGarage(e),setupGarage(!1),hideYMMFformFromBody(),displayFitmentResult(e)}customYmm.sortBy="default",customYmm.priceIdsAndLabels={"*-50":"$50 and less","50-100":"$50 to $100","100-250":"$100 to $250","250-500":"$250 to $500","500-1000":"$500 to $1000","1000-*":"$1000 and more"},customYmm.development="production",customYmm.siteURL=returnSiteURL(),"local"==customYmm.development?(customYmm.ymmOnlyApi="provide-ymm-data-only.php",customYmm.fitmentDataApi="provide-fitment-data.php",customYmm.searchDataApi="search.php",customYmm.linkToCssFile="index.css"):(customYmm.selectedCategoryURLVsName={},customYmm.ymmDomain="https://auto.searchalytics.com/flextread/integration",customYmm.ymmOnlyApi=customYmm.ymmDomain+"/provide-ymm-data-only.php",customYmm.fitmentDataApi=customYmm.ymmDomain+"/provide-fitment-data.php",customYmm.searchDataApi=customYmm.ymmDomain+"/search.php",customYmm.linkToCssFile="https://apps.cartmade.com/arjun/flextread/index.css",customYmm.subCategoryAPI=customYmm.ymmDomain+"/provideSubCategories.php"),customYmm.isInHomePage=!1,customYmm.isInProductPage=!1,customYmm.isInCategoryPage=!1,customYmm.isInBrandPage=!1,customYmm.isInSearchPage=!1,customYmm.productPageWrapper=".product_meta",customYmm.homePageWrapper="#home-page-wrapper",customYmm.searchPageWrapper="#searchpagewrapper",customYmm.subCatContainerForCategoryPage="#subcats-container",customYmm.categoryPageWrapper="#searchpagewrapper",customYmm.brandPageWrapper="#searchpagewrapper",customYmm.garageButtonWrapper=".header-nav-inner",customYmm.garageButtonWrapperMobile=".section-header-mobile",customYmm.quickSearchWrapper=".search-modal__content",customYmm.searchQuery="",customYmm.fitmentTableWrapper="#tab-custom-tab-fitment-mobile",customYmm.fitmentTabLinkWrapper=".productView-bottom .tabs",customYmm.isInHomePageChecker="#suspensionbroshomewrapper",customYmm.filtersWrapperMobile="#filters-wrapper-mobile",customYmm.filtersWrapperDesktop="#filters-wrapper-desktop",customYmm.filtersWrapperMobileSidebarClass="halo-sidebar halo-sidebar-left",createFiltersMobileWrapperAndAppend(),customYmm.svgCross=`<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_5_22)">
+<path d="M19.408 3.41599C19.5938 3.23017 19.7412 3.00957 19.8418 2.76678C19.9423 2.524 19.9941 2.26378 19.9941 2.00099C19.9941 1.7382 19.9423 1.47799 19.8418 1.2352C19.7412 0.992413 19.5938 0.771811 19.408 0.585991C19.2222 0.40017 19.0016 0.252772 18.7588 0.152206C18.516 0.0516411 18.2558 -0.00012207 17.993 -0.00012207C17.7302 -0.00012207 17.47 0.0516411 17.2272 0.152206C16.9844 0.252772 16.7638 0.40017 16.578 0.585991L9.99999 7.17499L3.41599 0.591988C3.04071 0.216706 2.53172 0.00587462 2.00099 0.00587463C1.47026 0.00587464 0.961271 0.216706 0.58599 0.591988C0.210709 0.967269 -0.000122059 1.47626 -0.00012207 2.00699C-0.000122081 2.53772 0.210709 3.04671 0.58599 3.42199L7.17499 9.99999L0.59199 16.584C0.216709 16.9593 0.00587792 17.4683 0.00587793 17.999C0.00587795 18.5297 0.216709 19.0387 0.59199 19.414C0.967272 19.7893 1.47626 20.0001 2.00699 20.0001C2.53772 20.0001 3.04671 19.7893 3.42199 19.414L9.99999 12.83L16.584 19.408C16.7698 19.5938 16.9904 19.7412 17.2332 19.8418C17.476 19.9423 17.7362 19.9941 17.999 19.9941C18.2618 19.9941 18.522 19.9423 18.7648 19.8418C19.0076 19.7412 19.2282 19.5938 19.414 19.408C19.5998 19.2222 19.7472 19.0016 19.8478 18.7588C19.9483 18.516 20.0001 18.2558 20.0001 17.993C20.0001 17.7302 19.9483 17.47 19.8478 17.2272C19.7472 16.9844 19.5998 16.7638 19.414 16.578L12.83 9.99999L19.408 3.41599Z" fill="#C2C2C2"/>
+</g>
+<defs>
+<clipPath id="clip0_5_22">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>
+`,getCookie("garage")?customYmm.garage=JSON.parse(getCookie("garage")):customYmm.garage=[];const decideWhatHappensAfterFormChangeInProductPage=async e=>{var[t,r,a,s]=returnSelections(e),o=await fetchYmmOnlyDataAndRender(e);o.sub_model_arr=o.sub_model_arr.filter(e=>""!==e),manageHighlighted(e),o.makes.length&&0==r||o.models.length&&0==a||isSubModelExists()&&o.sub_model_arr.length&&""==s||0==r||0==t||0==a?(document.querySelector("#form-action-addToCart")&&(document.querySelector("#form-action-addToCart").disabled=!0,document.querySelector("#form-action-addToCart").style.cursor="no-drop",document.querySelector("#form-action-addToCart").style.opacity="0.3"),displayYMMformFromBody()):(enableSelectTag(e,"btn-go"),saveOrGoforProductPage(e),removeHighlighted(e))};function addHighlighted(e,t){try{removeHighlighted(e),document.querySelector("#"+e).querySelector("."+t).classList.add("ymm-select-selected")}catch(e){console.log(e)}}function removeHighlighted(e){document.querySelector("#"+e).querySelector(".ymm-select-selected")&&document.querySelector("#"+e).querySelector(".ymm-select-selected").classList.remove("ymm-select-selected")}function manageHighlighted(e){var[t,r,a,,]=returnSelections(e);addHighlighted(e,"select-year"),t&&addHighlighted(e,"select-make"),enableSelectTag(e,"btn-clear"),r&&addHighlighted(e,"select-model"),a&&addHighlighted(e,"select-sub-model")}function assignYmmFormChangeListeners(a,s,e,t){document.querySelector("#"+a).querySelectorAll(".ymm-select").forEach(r=>{r.addEventListener("change",e=>{var t=r.getAttribute("data-type");switch(enableSelectTag(a,"btn-clear"),t){case"select-year":customYmm[""+a].years.includes(parseInt(r.value))||(selectedYear=!1),customYmm[""+a].selections.year=r.value,customYmm[""+a].selections.make=!1,customYmm[""+a].selections.model=!1,customYmm[""+a].selections.sub_model="",disableSelectTag(a,"select-make"),disableSelectTag(a,"select-model"),disableSelectTag(a,"btn-go");break;case"select-make":customYmm[""+a].selections.model=!1,customYmm[""+a].selections.make=r.value,customYmm[""+a].selections.sub_model="",disableSelectTag(a,"select-model"),disableSelectTag(a,"btn-go");break;case"select-model":customYmm[""+a].selections.model=r.value,customYmm[""+a].selections.sub_model="";break;case"select-sub-model":customYmm[""+a].selections.sub_model=r.value}disableSelectTag(a,"select-sub-model"),s(a)})}),document.querySelector("#"+a).querySelector(".btn-clear").addEventListener("click",()=>{clearYmmForm(a,t)}),document.querySelector("#"+a).querySelector(".btn-go").addEventListener("click",()=>{e(a)})}function resetSelectTag(e,t){document.querySelector("#"+e).querySelector("."+t).selectedIndex=0}function clearYmmForm(e,t=!1){customYmm[""+e].selections.year=!1,customYmm[""+e].selections.make=!1,customYmm[""+e].selections.model=!1,customYmm[""+e].selections.sub_model="",enableSelectTag(e,"select-year"),resetSelectTag(e,"select-year"),disableSelectTag(e,"select-make"),resetSelectTag(e,"select-make"),disableSelectTag(e,"select-model"),resetSelectTag(e,"select-model"),disableSelectTag(e,"select-sub-model"),resetSelectTag(e,"select-sub-model"),disableSelectTag(e,"btn-go"),disableSelectTag(e,"btn-clear"),manageHighlighted(e),customYmm.garage.forEach((e,t)=>{e.selected&&(customYmm.garage[t].selected=!1)}),setCookie("garage",JSON.stringify(customYmm.garage)),setupGarage(!1),(customYmm.isInSearchPage||customYmm.isInCategoryPage||customYmm.isInBrandPage)&&(setSelectedVehicleWithCategoryTitle(),clearContentsForCategoryPage(),displayYmmFormInSearchPage(),customYmm.searchQuery=""),t&&t(),displayBreadCrumb(),setURLparams(),!1===customYmm.hideProductsUntilSelected&&fetchProductsAndRender()}function createYmmForm(e){return customYmm[""+e]={},customYmm[""+e].years=customYmm.years,customYmm[""+e].makes=[],customYmm[""+e].models=[],customYmm[""+e].sub_model_arr=[],customYmm[""+e].selections={year:!1,make:!1,model:!1,sub_model:""},`
+
+            <div class="ymm-form-container" id= "${e}">
+            
+                <div class="ymm-form-select-items">
+                
+                    <div class="year ymm-form-select">
+                        <select data-type = "select-year" class="select-year ymm-select ymm-select-selected">
+                            <option>Year</option>
+                        </select>
+                    </div>
+        
+                    <div class="make ymm-form-select">
+                        <select data-type="select-make" class="select-make ymm-select" disabled>
+                            <option>Make</option>
+                        </select>
+                    </div>
+        
+                    <div class="model ymm-form-select">
+                        <select data-type = "select-model" class="select-model ymm-select" disabled>
+                            <option>Model</option>
+                        </select>
+                    </div>
+                    
+                    ${"ymm-add-to-garage-form-modal"==e?'<div class="optional-field-label-wrapper">Optional Fields </div>':""}
+                        
+                    <div class="sub_model ymm-form-select">
+                        <select data-type = "select-sub-model" class="select-sub-model ymm-select" disabled>
+                            <option>Sub Model</option>
+                        </select>
+                    </div>
+                    
+                
+                </div>
+                
+                <div class="ymm-button-holder-wrapper">
+                
+                    <div class="ymm-button-holder">
+                    
+                        <div class = "ymm-go-btn">
+                            <button class ="button button-primary btn-go" disabled>Shop Now</button>
+                        </div>
+                        
+                        <div class = "ymm-clear-btn">
+                            <button class ="button button-secondary btn-clear" disabled>Clear</button>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+
+            </div>
+        `}function setupYMMform(e,t,r,a=!1,s=!1){var t=document.querySelector("."+t),o=document.createElement("div");t.appendChild(o),o.innerHTML=createYmmForm(e),assignYmmFormChangeListeners(e,r,a,s),document.querySelector("#"+e).querySelector(".select-year").innerHTML=createOptionTag("Year")+customYmm[""+e].years.map(e=>createOptionTag(e)).join("")}async function fetchYmmOnlyDataAndRender(e){try{var t=await(await fetch(`${customYmm.ymmOnlyApi}?category=${customYmm.selectedCategory}&sub_model=${customYmm[e].selections.sub_model}&year=${customYmm[e].selections.year}&make=${customYmm[e].selections.make}&model=`+customYmm[e].selections.model)).json();return displayMakesAndModels(t,e),t}catch(e){console.error(e)}}function disableSelectTag(e,t){document.querySelector("#"+e).querySelector("."+t).disabled=!0,resetSelectTag(e,t)}function enableSelectTag(e,t){document.querySelector("#"+e).querySelector("."+t).disabled=!1}function hideSelectTag(e,t){document.querySelector("#"+e).querySelector("."+t).closest(".ymm-form-select").style.display="none"}function displaySelectTag(e,t){document.querySelector("#"+e).querySelector("."+t).closest(".ymm-form-select").style.display="block"}function createOptionTag(e,t=!1){let r=!1;return`
+            <option value = "${e}" ${(r=0!=t&&Object.values(customYmm[""+t].selections).includes(e)?!0:r)?"selected":""} >${e}</option>
+        `}function isInVehiclePage(){return window.location.href.includes("/vehicles/")}function returnYMMvaluesFromVehiclePage(){return document.querySelector(".page-description").innerText.split(":")[1].trim().split("|").map(e=>e.trim())}function displayMakesAndModels(t,r){if(customYmm[""+r].makes=[...new Set(t.makes)].sort(),customYmm[""+r].models=[...new Set(t.models)].sort(),customYmm[""+r].sub_model_arr=[...new Set(t.sub_model_arr)].sort().filter(e=>null!=e&&0<e.trim().length),customYmm[""+r].selections.year)for(var e=customYmm[""+r].selections.year,a=document.querySelector(`#${r} .select-year`),s=0;s<a.options.length;s++)if((o=a.options[s]).value===e){o.selected=!0;break}if(0<customYmm[""+r].makes.length&&0!=customYmm[""+r].selections.year&&(customYmm[""+r].makes=[...new Set(t.makes)].sort(),enableSelectTag(r,"select-make"),document.querySelector("#"+r).querySelector(".select-make").innerHTML=createOptionTag("Make")+customYmm[""+r].makes.map(e=>createOptionTag(e,r)).join(""),isInVehiclePage())){t=returnYMMvaluesFromVehiclePage();let e=!1;if(e=t[0],(e=3==t.length?t[1]:e)&&0==customYmm[""+r].selections.make)for(var o,a=document.querySelector(`#${r} .select-make`),s=0;s<a.options.length;s++)if((o=a.options[s]).value===e){o.selected=!0;var c=new Event("change");a.dispatchEvent(c);break}}0<customYmm[""+r].models.length&&0!=customYmm[""+r].selections.make&&(enableSelectTag(r,"select-model"),document.querySelector("#"+r).querySelector(".select-model").innerHTML=createOptionTag("Model")+customYmm[""+r].models.map(e=>createOptionTag(e,r)).join("")),0!=customYmm[""+r].selections.model&&(0<customYmm[""+r].sub_model_arr.length?(displaySelectTag(r,"select-sub-model"),enableSelectTag(r,"select-sub-model"),document.querySelector("#"+r).querySelector(".select-sub-model").innerHTML=createOptionTag("Sub Model")+customYmm[""+r].sub_model_arr.map(e=>createOptionTag(e,r)).join("")):hideSelectTag(r,"select-sub-model"))}function createRequiredWrappersForProductPage(){var e=document.querySelector(customYmm.productPageWrapper),t=document.createElement("div");t.className="form-fitment-wrapper",e.insertAdjacentElement("afterend",t),t.innerHTML=`
 
             <div class = "our-own-wrapper">
 
@@ -97,7 +418,7 @@ async function loadSettingsFile(){customYmm.settingsURL="https://auto.searchalyt
 
             </div>
 
-        `}function hideYMMFformFromBody(){document.querySelector(".custom-ymm-form-body").style.display="none",document.querySelector(".fitment-result").style.display="block"}function displayYMMformFromBody(){document.querySelector(".custom-ymm-form-body").style.display="block",document.querySelector(".fitment-result").style.display="none"}function isDriveTypeExists(){for(var e=0;e<customYmm.fitmentData.length;e++)if(0<customYmm.fitmentData[e].drive_type.trim().length)return!0;return!1}function isFuelTypeExists(){for(var e=0;e<customYmm.fitmentData.length;e++)if(0<customYmm.fitmentData[e].fuel_type.trim().length)return!0;return!1}function isNumDoorsExists(){for(var e=0;e<customYmm.fitmentData.length;e++)if(0<customYmm.fitmentData[e].num_doors.trim().length)return!0;return!1}function returnDriveTypeTH(){return isDriveTypeExists()?"<th>Drive Type</th>":""}function returnFuelTypeTH(){return isFuelTypeExists()?"<th>Fuel Type</th>":""}function returnNumDoorsTH(){return isNumDoorsExists()?"<th>Num Doors</th>":""}function returnDriveTypeTD(e){return isDriveTypeExists()?`<td>${e}</td>`:""}function returnFuelTypeTD(e){return isFuelTypeExists()?`<td>${e}</td>`:""}function returnNumDoorsTD(e){return isNumDoorsExists()?`<td>${e}</td>`:""}function toggleViewMoreOrLess(){var e;customYmm.view_more=!customYmm.view_more,0==customYmm.view_more&&((e=document.querySelector(".tabs-horizontal"))?3<=(e=e.querySelectorAll("li")).length?((e=e[2]).click(),console.log(e)):console.log("There are less than three li elements in the ul."):console.log("No ul element with the class 'tabs-horizontal' found.")),displayFitmentTable(),window.innerWidth<500&&document.querySelector("#tab-fitment").querySelector(".toggleLink").click()}function returnViewMoreOrLessBtn(){return 10<customYmm.fitmentData.length?`
+        `}function hideYMMFformFromBody(){document.querySelector(".custom-ymm-form-body").style.display="none",document.querySelector(".fitment-result").style.display="block"}function displayYMMformFromBody(){document.querySelector(".custom-ymm-form-body").style.display="block",document.querySelector(".fitment-result").style.display="none"}function isSubModelExists(){for(var e=0;e<customYmm.fitmentData.length;e++)if(0<customYmm.fitmentData[e].sub_model.trim().length)return!0;return!1}function returnSubModelTH(){return isSubModelExists()?"<th>Sub Model</th>":""}function returnSubModelTD(e){return isSubModelExists()?`<td>${e}</td>`:""}function toggleViewMoreOrLess(){var e;customYmm.view_more=!customYmm.view_more,0==customYmm.view_more&&((e=document.querySelector(".tabs-horizontal"))?3<=(e=e.querySelectorAll("li")).length?((e=e[2]).click(),console.log(e)):console.log("There are less than three li elements in the ul."):console.log("No ul element with the class 'tabs-horizontal' found.")),displayFitmentTable(),window.innerWidth<500&&document.querySelector("#tab-fitment").querySelector(".toggleLink").click()}function returnViewMoreOrLessBtn(){return 10<customYmm.fitmentData.length?`
                 <span class="btn btn-secondary" onclick="toggleViewMoreOrLess()">${customYmm.view_more?"View Less":"View More"}</span>
             `:""}function displayFitmentTable(){void 0===customYmm.view_more&&(customYmm.view_more=!1);let e=customYmm.fitmentData;if(customYmm.view_more||(e=customYmm.fitmentData.slice(0,10)),0==customYmm.fitmentData.length)return"";var t=`
 
@@ -112,9 +433,7 @@ async function loadSettingsFile(){customYmm.settingsURL="https://auto.searchalyt
                                     <th>Year</th>
                                     <th>Make</th>
                                     <th>Model</th>
-                                    ${returnDriveTypeTH()}
-                                    ${returnFuelTypeTH()}
-                                    ${returnNumDoorsTH()}
+                                    ${returnSubModelTH()}
                                 </tr>
     
                                 ${e.map(e=>`
@@ -122,9 +441,7 @@ async function loadSettingsFile(){customYmm.settingsURL="https://auto.searchalyt
                                             <td>${e.from_year} - ${e.to_year}</td>
                                             <td>${e.make}</td>
                                             <td>${e.model}</td>
-                                            ${returnDriveTypeTD(e.drive_type)}
-                                            ${returnFuelTypeTD(e.fuel_type)}
-                                            ${returnNumDoorsTD(e.num_doors)}
+                                            ${returnSubModelTD(e.sub_model)}
                                         </tr>
                                     `).join(" ")}
     
@@ -151,28 +468,177 @@ async function loadSettingsFile(){customYmm.settingsURL="https://auto.searchalyt
                         </div>
                     </div>
 
-                `;else{document.querySelector(".product-recommendations").innerHTML=`
-                    <div class="page-width container-wrapper container">
-                        <div class="product-related-wrapper">
-                            <div class="halo-block-header text-center block-title--style1">
-                                <h3 class="title">
-                                    <span class="text">RELATED PRODUCTS</span>
-                                </h3>
-                            </div>                            
-                            <div class="products-related">
-                                
-                              <div class="carousel-products-related ymm-products-wrapper">
-                                ${t.relatedProducts.map(e=>constructProductDiv(e)).join(" ")}
-                              </div>
-                             
-                            </div>        
+                `;else{document.querySelector(".product-recommendations")&&(document.querySelector(".product-recommendations").innerHTML=`
+                        <div class="page-width container-wrapper container">
+                            <div class="product-related-wrapper">
+                                <div class="halo-block-header text-center block-title--style1">
+                                    <h3 class="title">
+                                        <span class="text">RELATED PRODUCTS</span>
+                                    </h3>
+                                </div>                            
+                                <div class="products-related">
+                                    
+                                  <div class="carousel-products-related ymm-products-wrapper">
+                                    ${t.relatedProducts.map(e=>constructProductDiv(e)).join(" ")}
+                                  </div>
+                                 
+                                </div>        
+                            </div>
                         </div>
+                    `,$(".carousel-products-related").slick({slidesToShow:4,slidesToScroll:4,responsive:[{breakpoint:1025,settings:{slidesToShow:4,slidesToScroll:4,infinite:!0,dots:!0,arrows:!1}},{breakpoint:769,settings:{slidesToShow:3,slidesToScroll:3,dots:!0,arrows:!1}},{breakpoint:480,settings:{slidesToShow:2,slidesToScroll:2,dots:!0,arrows:!1}}]})),setupYMMform("product-page-ymm-form","ymm-form-container-container",decideWhatHappensAfterFormChangeInProductPage,saveOrGoforProductPage);let e=!1;(e=customYmm.garage.length&&(filteredVehicles=customYmm.garage.filter(e=>e.selected)).length?filteredVehicles[0]:e)&&(ymm=e,customYmm["product-page-ymm-form"].selections={year:ymm.year,make:ymm.make,model:ymm.model,sub_model:ymm.sub_model}),decideWhatHappensAfterFormChangeInProductPage("product-page-ymm-form")}})}function setCookie(e,t){e=e+"="+encodeURIComponent(t),t=new Date;t.setDate(t.getDate()+30),e=e+("; expires="+t.toUTCString())+"; path=/",document.cookie=e}function getCookie(e){for(const a of document.cookie.split(";")){var[t,r]=a.trim().split("=");if(t===e)return decodeURIComponent(r)}return null}function decideWhichPageIsIt(){var e=document.body.className;e.includes("template-search")||e.includes("page-type-seo-friendly")?customYmm.isInSearchPage=!0:e.includes("template-product")?customYmm.isInProductPage=!0:e.includes("template-index")?customYmm.isInHomePage=!0:e.includes("template-collection")&&(window.location.href.includes("vendors")?customYmm.isInBrandPage=!0:customYmm.isInCategoryPage=!0)}function hideGarage(){document.querySelector("#garage-wrapper-wrapper").style.display="none"}function displayGarage(){document.querySelector("#garage-wrapper-wrapper").style.display="block"}function returnCloseIcon(){return`
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon-tabler icon-tabler-x" width="28" height="28" viewBox="0 0 24 24" stroke-width="1" stroke="#000000" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+              <path d="M18 6l-12 12"></path>
+              <path d="M6 6l12 12"></path>
+            </svg>    
+        `}function fillGarageWithVehicles(){return 0<customYmm.garage.length?customYmm.garage.map(({selected:e=!1,id:t,year:r,make:a,model:s,sub_model:o})=>`
+                <div class  =  "each-vehicle-in-garage ${e?"selected-vehicle-in-garage":""} d-flex align-items-center ymm-justify-content-between ymm-mt-2 cursor-pointer  ">
+                    
+                    <div class = "each-vehicle-in-garage__name" data-ymm-id="${t}">
+                        
+                        <span class="selected-ymm-each selected-ymm-vq-each"> 
+                            <span class="selected-ymm-ymm-each">
+                                ${r} ${a} ${s} 
+                            </span>
+                            <span class="selected-vq-each">
+                                ${o}
+                            </span>
+                        </span>
+                        
                     </div>
-                `,$(".carousel-products-related").slick({slidesToShow:4,slidesToScroll:4,responsive:[{breakpoint:1025,settings:{slidesToShow:4,slidesToScroll:4,infinite:!0,dots:!0,arrows:!1}},{breakpoint:769,settings:{slidesToShow:3,slidesToScroll:3,dots:!0,arrows:!1}},{breakpoint:480,settings:{slidesToShow:2,slidesToScroll:2,dots:!0,arrows:!1}}]}),setupYMMform("product-page-ymm-form","ymm-form-container-container",decideWhatHappensAfterFormChangeInProductPage,saveOrGoforProductPage);let e=!1;(e=customYmm.garage.length&&(filteredVehicles=customYmm.garage.filter(e=>e.selected)).length?filteredVehicles[0]:e)&&(ymm=e,customYmm["product-page-ymm-form"].selections={year:ymm.year,make:ymm.make,model:ymm.model,drive_type:ymm.drive_type,fuel_type:ymm.fuel_type,num_doors:ymm.num_doors}),decideWhatHappensAfterFormChangeInProductPage("product-page-ymm-form")}})}function setupForSearchPage(e=!1){e?(insertWrappersForSearchPage(customYmm.categoryPageWrapper),fetchSubCategoriesAndRender()):insertWrappersForSearchPage(customYmm.searchPageWrapper),setupYMMform("search-page-ymm-form-container","search-page-ymm-form-container",decideWhatHappensAfterFormChangeInSearchPage,saveOrGoForSearchPage),setInitialSelections(),displayBreadCrumb()}function setupForCategoryPage(){setupForSearchPage(isCategoryPage=!0)}function setupForBrandPage(){setupForSearchPage()}function fetchProductsAndRender(r=!1){const a="search-page-ymm-form-container";let[s,o,c,e,t,m]=returnSelections(a);showLoadingOverlay(),fetch(`${customYmm.searchDataApi}?sortby=${customYmm.sortBy}&drive_type=${e}&fuel_type=${t}&num_doors=${m}&searchQuery=${customYmm.searchQuery}&year=${customYmm[a].selections.year}&make=${customYmm[a].selections.make}&model=${customYmm[a].selections.model}&category=${customYmm.selectedCategory}&page=${customYmm.currentPage}&limit=${customYmm.productsPerPage}&brands=${customYmm.selectedBrands.join(",")}&prices=`+customYmm.selectedPrices.join(",")).then(e=>e.json()).then(e=>{var t;console.log("helloosdfsdfhsf"),hideLoadingOverlay(),customYmm.searchResultsCount=e.count,displayMakesAndModels(e,a),hideOrShowFormAfterLoadingDropdownValues(e,a),setSelectedVehicleWithCategoryTitle(),!customYmm.isInCategoryPage||s&&c&&o||!customYmm.hideProductsUntilSelected?(document.querySelector(".ymm-filters-products").style.display="flex",t=e.products,r||(customYmm.products={}),t.forEach(e=>{customYmm.products[""+e.id]=e}),customYmm.allCounts=e.count,renderProducts(e.products,r),document.querySelector(".loading-indicator").innerHTML=generatePagination(customYmm.currentPage,12,customYmm.searchResultsCount),e.products.length==customYmm.productsPerPage?customYmm.loadMore=!0:customYmm.loadMore=!1,customYmm.categories=e.categories,customYmm.brands=e.brands,customYmm.priceRanngesVsFrequency=e.priceRanngesVsFrequency,displayResponsiveFilters(),document.querySelector(".ymm-change-or-clear__title").innerHTML=`
-                ${returnSelectionsForBreadCrumb()}
-            `,displayBreadCrumb(),scrollToTop()):console.log("returning because in category page and something is not set")}).catch(e=>{hideLoadingOverlay()})}function hideYmmFormInSearchPage(){document.querySelector(".ymm-form-search-page").style.display="none",document.querySelector(".ymm-change-or-clear").style.display="flex"}function displayYmmFormInSearchPage(){document.querySelector(".ymm-form-search-page").style.display="block",document.querySelector(".ymm-change-or-clear").style.display="none"}function clearYMMformAndDisplay(){document.querySelector(".ymm-form-search-page").querySelector(".btn-clear").click(),displayBreadCrumb()}function insertWrappersForSearchPage(e){let t="";document.querySelector("#search_auto_data")&&(t=document.querySelector("#search_auto_data").getAttribute("data-site_width"));var r=customYmm.settings.productsPerRow;document.querySelector(e).innerHTML+=`
+                    
+                    <div data-vehicle = "${t}" class = "remove-this-vehicle-from-garage ymm-icon-danger">
+                        ${customYmm.svgCross}
+                    </div>
+                
+                </div>
+            `).join(" "):"The garage is empty."}function displayGarageWrapper(){document.querySelector("#wrapperToGarageWrapperWrapper").style.display="block",document.querySelector("#garage-wrapper-wrapper").style.display="block"}function hideGarageWrapper(){document.querySelector("#wrapperToGarageWrapperWrapper").style.display="none",document.querySelector("#garage-wrapper-wrapper").style.display="none",document.querySelector("#cb-garage-btn")&&(document.querySelector("#cb-garage-btn").checked=!1)}function constructGarageAndDisplayIt(){var e=`
 
-            <div class="ymm-container ${t} container">
+            <div id = "garage-wrapper">
+
+                <div class = "clear-garage d-flex align-items-center ymm-justify-content-between cursor-pointer">
+                    <div><strong>Your Garage</strong></div>
+                    <div class ="ymm-text-right">
+                        <span class = "clear-garage-span" id="clear-garage-span">
+                            Clear Garage
+                        </span>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class = "garage-content">
+
+                    ${fillGarageWithVehicles()}
+                    
+                </div>
+                
+                <hr>
+                <div class = "add-vehicle-to-garage-button-wrapper ymm-text-center">
+                    <button class = "button button-primary" id = "add-vehicle-to-garage-button">
+                        Add Vehicle
+                    </button>
+                </div>
+
+            </div>
+        `,t=document.querySelector("#garage-wrapper-wrapper");t||((t=document.createElement("div")).id="garage-wrapper-wrapper",t.className="garage-wrapper-wrapper",document.querySelector("#newly-added-garage-btn").appendChild(t),(t=document.createElement("div")).className="modal-wrapper",t.id="wrapperToGarageWrapperWrapper",t.style.backgroundColor="rgba(255, 255, 255, 0)",t.addEventListener("click",()=>{hideGarageWrapper()}),document.body.appendChild(t)),document.querySelector("#garage-wrapper-wrapper").innerHTML=e,Array.from(document.querySelector("#garage-wrapper").querySelectorAll(".remove-this-vehicle-from-garage")).forEach(t=>{t.addEventListener("click",e=>{customYmm.garage=customYmm.garage.filter(e=>e.id!=t.getAttribute("data-vehicle")),setupGarage(displayGarageFlag=!0),setCookie("garage",JSON.stringify(customYmm.garage))})}),document.querySelector("#add-vehicle-to-garage-button").addEventListener("click",e=>{displayOverlay(),hideGarageWrapper()}),document.querySelector("#clear-garage-span").addEventListener("click",()=>{customYmm.garage=[],setCookie("garage",JSON.stringify(customYmm.garage)),setupGarage(!0)}),Array.from(document.querySelectorAll(".each-vehicle-in-garage__name")).forEach(t=>{t.addEventListener("click",e=>{decideWhereToGoWhenGarageItemClicked(t.getAttribute("data-ymm-id"))})})}function returnGarageText(){let e=!1;var t;return(e=customYmm.garage.length&&(t=customYmm.garage.filter(e=>e.selected)).length?t[0]:e)?`
+                    <span class="selected-ymm selected-ymm-vq"> 
+                        <span class="selected-ymm-ymm">
+                            ${e.year} ${e.make} ${e.model}
+                        </span>
+                        <span class="selected-vq">
+                            ${e.sub_model} 
+                        </span>
+                    </span>
+                    <span class = "filter-pipe"> | </span>
+                    <span class = "change-vehicle"> Change </span> 
+                `:`
+                    <span classs="select-your-vehicle"> Select Your Vehicle </span>
+                
+                    <span class="icon-down-arrow" >
+                        <svg width="11" height="7" viewBox="0 0 11 7" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <g clip-path="url(#clip0_119_394)">
+                            <path d="M5.5 6.40002L0 2.43187e-05L11 2.43187e-05L5.5 6.40002Z" fill="white"/>
+                            </g>
+                            <defs>
+                            <clipPath id="clip0_119_394">
+                            <rect width="11" height="6.4" fill="white"/>
+                            </clipPath>
+                            </defs>
+                        </svg>
+                    </span>
+                
+                `}function returnGarageIcon(){return`
+            <span class="icon-grage">
+                ${(void 0===customYmm.settings.headerVehicleIcon?returnJeep:"garage"==customYmm.settings.headerVehicleIcon?returnGarage:"truck"==customYmm.settings.headerVehicleIcon?returnTruck:"car"==customYmm.settings.headerVehicleIcon?returnCar:returnJeep)()}
+            </span>
+        `}function returnGarageIconOrNothing(){return`
+            ${1!=customYmm.garage.filter(e=>e.selected).length?returnGarageIcon():""}
+        `}function setupGarage(e=!1){const t=customYmm.garage.length;var r,a;document.querySelector("#newly-added-garage-btn")&&document.querySelector("#newly-added-garage-btn").remove(),1024<window.innerWidth?document.querySelector(customYmm.garageButtonWrapper).innerHTML+=`
+                                            
+                <!-- need-to-change for every site -->
+                                            
+                <div id = "newly-added-garage-btn" class="navPages-item navPages-item-page">
+                    <input type="checkbox" id="cb-garage-btn" class="hidden">
+                    <label for="cb-garage-btn" class ='navPages-action' id="garage-btn">
+                        ${returnGarageIconOrNothing()}
+                        ${returnGarageText()}
+                    </label>
+                </div>
+    
+            `:(r=document.querySelector(".section-header-navigation"),(a=document.createElement("sticky-ymm-mobile")).innerHTML=`
+            <div id = "newly-added-garage-btn" class="navPages-item navPages-item-page">
+                <input type="checkbox" id="cb-garage-btn" class="hidden">
+                <label for="cb-garage-btn" class ='navPages-action' id="garage-btn">
+                    ${returnGarageIconOrNothing()}
+                    ${returnGarageText()}
+                </label>
+            </div>
+        `,r.parentNode.insertBefore(a,r.nextSibling)),document.querySelector("#cb-garage-btn").addEventListener("change",e=>{(e.target.checked?0<t?(constructGarageAndDisplayIt(),displayGarageWrapper):(document.body.classList.toggle("my-grage-active"),displayOverlay):hideGarageWrapper)()}),e&&constructGarageAndDisplayIt()}function handleSubmit(){var e=customYmm.searchQuery;customYmm.isInSearchPage?0<e.trim().length&&(customYmm.loadMore=!0,customYmm.currentPage=1,fetchProductsAndRender()):0<e.trim().length&&(window.location.href=customYmm.siteURL+"/search/?sq="+e)}function setupQuickSearch(){document.querySelector(customYmm.quickSearchWrapper)&&(document.querySelector(customYmm.quickSearchWrapper).innerHTML=`
+            <div class="search-modal__form">
+            
+                <form class="form" id = "ymm-search-query-form" onsubmit="return false">
+                    <fieldset class="form-fieldset">
+                        <div class="form-field">
+                            <input class="form-input" data-search-quick="" name="nav-quick-search" id="nav-quick-search"  placeholder="Search..." autocomplete="off">
+                             <button type="submit" class="button button--{{#if theme_settings.halo_homepage_layout_4}}tertiary{{else}}primary{{/if}}" aria-label="{{lang 'search.quick_search.input_label'}}">
+                               
+                                
+                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <g clip-path="url(#clip0_2_20)">
+                                    <path d="M17.587 15.597L13.379 11.389C14.3839 9.89596 14.8027 8.08463 14.555 6.30201C14.3282 4.7195 13.5918 3.25404 12.4573 2.12767C11.3228 1.00131 9.8521 0.275422 8.26801 0.0600078C7.15564 -0.0858156 6.02464 0.0260672 4.9624 0.38701C3.90016 0.747953 2.93513 1.34829 2.14189 2.14163C1.34864 2.93497 0.748422 3.90008 0.387609 4.96236C0.0267949 6.02464 -0.0849502 7.15566 0.0610087 8.26801C0.275707 9.85209 1.00092 11.323 2.12676 12.4579C3.2526 13.5927 4.71769 14.3297 6.30001 14.557C8.08374 14.8052 9.89633 14.3861 11.39 13.38L15.6 17.588C15.8665 17.8393 16.2204 17.9768 16.5866 17.9712C16.9529 17.9657 17.3025 17.8175 17.5612 17.5583C17.8199 17.299 17.9674 16.9491 17.9722 16.5829C17.977 16.2166 17.8388 15.863 17.587 15.597ZM2.78101 7.31201C2.78101 6.11853 3.25511 4.97394 4.09903 4.13003C4.94294 3.28611 6.08753 2.81201 7.28101 2.81201C8.47448 2.81201 9.61908 3.28611 10.463 4.13003C11.3069 4.97394 11.781 6.11853 11.781 7.31201C11.781 8.50548 11.3069 9.65007 10.463 10.494C9.61908 11.3379 8.47448 11.812 7.28101 11.812C6.08753 11.812 4.94294 11.3379 4.09903 10.494C3.25511 9.65007 2.78101 8.50548 2.78101 7.31201Z" fill="#A8A8A8"/>
+                                    </g>
+                                    <defs>
+                                    <clipPath id="clip0_2_20">
+                                    <rect width="17.998" height="18" fill="white"/>
+                                    </clipPath>
+                                    </defs>
+                                </svg>
+    
+                            </button>
+                        </div>
+                    </fieldset>
+                </form>
+            
+            </div>
+
+        `,document.getElementById("ymm-search-query-form").addEventListener("submit",handleSubmit),document.getElementById("nav-quick-search").addEventListener("input",e=>{customYmm.searchQuery=e.target.value.trim()}))}function setupHeader(){setupGarage(),setupQuickSearch()}function hideOverlay(){document.querySelector(".modal-wrapper").style.display="none",document.querySelector(".ymm-modal").style.display="none",document.body.classList.remove("my-grage-active"),document.querySelector("#cb-garage-btn")&&(document.querySelector("#cb-garage-btn").checked=!1)}function displayOverlay(){document.querySelector(".modal-wrapper").style.display="block",document.body.classList.add("my-grage-active"),document.querySelector(".ymm-modal").style.display="block"}function resetDropdownData(e){customYmm[""+e].makes=[],customYmm[""+e].models=[],customYmm[""+e].sub_model_arr=[]}function returnSelections(e){return[customYmm[""+e].selections.year,customYmm[""+e].selections.make,customYmm[""+e].selections.model,customYmm[""+e].selections.sub_model]}function returnDropdowns(e){return[customYmm[""+e].years,customYmm[""+e].makes,customYmm[""+e].models,customYmm[""+e].sub_model_arr]}function goForAddToGarage(e){var[t,r,a,s]=returnSelections(e);if(pushToGarage(e),setupGarage(!1),hideOverlay(),customYmm.isInSearchPage||customYmm.isInCategoryPage||customYmm.isInBrandPage)customYmm["search-page-ymm-form-container"].selections={year:t,make:r,model:a,sub_model:s},fetchProductsAndRender();else return e=window.location.href,r=(t=new URL(e)).protocol,a=t.hostname,void(window.location.href=r+"//"+a+"/search/")}const decideWhatHappensAfterFormChangeInAddToGarage=async e=>{try{var[t,r,a,s]=returnSelections(e),o=await fetchYmmOnlyDataAndRender(e);o.sub_model_arr=o.sub_model_arr.filter(e=>""!==e),manageHighlighted(e),t&&r&&a&&(enableSelectTag(e,"btn-go"),o.sub_model_arr.length?document.querySelector(".optional-field-label-wrapper").style.display="block":document.querySelector(".optional-field-label-wrapper").style.display="none"),o.makes.length&&0==r||o.models.length&&0==a||o.sub_model_arr.length&&""==s||(removeHighlighted(e),goForAddToGarage(e))}catch(e){console.log(e),alert("An error has occurred. Please report it to us.\n"+JSON.stringify(e))}};function setupAddToGarageYMMform(){var e=document.createElement("div"),t=(e.className="modal-wrapper",e.addEventListener("click",()=>{hideOverlay()}),document.createElement("div"));t.className="ymm-add-to-garage-form-modal",t.classList.add("ymm-modal"),t.innerHTML=`
+
+            <div class = "add-to-garage-form-wrapper">
+                
+                <div class = "add-to-garage-heading">
+                    <h3 class = "add-to-garage-heading__heading">SELECT YOUR TRUCK</h3>
+                    <div class = "close-icon" onclick = "hideOverlay()">${customYmm.svgCross}</div>
+                </div>
+                    
+                <div class = "ymm-add-to-garage-form-wrapper">
+                </div>
+                
+            </div>
+
+        `,document.body.appendChild(e),document.body.appendChild(t),hideOverlay(),setupYMMform("ymm-add-to-garage-form-modal","ymm-add-to-garage-form-wrapper",decideWhatHappensAfterFormChangeInAddToGarage,goForAddToGarage)}function loadCssFile(){var e=document.createElement("link");e.rel="stylesheet",e.type="text/css",e.href=customYmm.linkToCssFile,document.head.appendChild(e)}function hideYmmFormInSearchPage(){document.querySelector(".ymm-form-search-page").style.display="none",document.querySelector(".ymm-change-or-clear").style.display="flex",console.log("ymm change or clear is shown")}function displayYmmFormInSearchPage(){document.querySelector(".ymm-form-search-page").style.display="block",document.querySelector(".ymm-change-or-clear").style.display="none",console.log("ymm change or clear is hidden")}function clearYMMformAndDisplay(){document.querySelector(".ymm-form-search-page").querySelector(".btn-clear").click(),displayBreadCrumb()}function hideOrShowMobileFilter(){document.querySelector(".background-overlay").addEventListener("click",()=>hideOrShowMobileFilter()),document.querySelector(customYmm.filtersWrapperMobile)&&(document.querySelector(customYmm.filtersWrapperMobile).classList.toggle("mobile-filters-open"),document.body.classList.toggle("mobile-filter-overlay"))}function insertWrappersForSearchPage(e){let t="";document.querySelector("#search_auto_data")&&(t=document.querySelector("#search_auto_data").getAttribute("data-site_width"));var r=customYmm.settings.productsPerRow;document.querySelector(e).innerHTML=`
+
+            <div class="ymm-container ${t}">
 
                 <div class="ymm-form-search-page">
                     
@@ -187,13 +653,13 @@ async function loadSettingsFile(){customYmm.settingsURL="https://auto.searchalyt
                 </div>
                 
                 
-                <div class = "ymm-change-or-clear ymm-mt-2 ymm-mb-2 d-flex ymm-justify-content-between" style="display:none">
+                <div class = "ymm-change-or-clear ymm-mt-2 ymm-mb-2  ymm-justify-content-between" style="display:none">
 
                     <div class = "ymm-change-or-clear__title">
 
                     </div>
 
-                    <div class = "change-clear-btn-wrapper d-flex ymm-ju stify-content-around">
+                    <div class = "change-clear-btn-wrapper d-flex ymm-justify-content-around">
                     
                         <div class = "change-vehicle-wrapper">
 
@@ -260,280 +726,16 @@ async function loadSettingsFile(){customYmm.settingsURL="https://auto.searchalyt
             
             </div>
 
-        `}function saveOrGoForSearchPage(e){pushToGarage(e),hideYmmFormInSearchPage(),fetchProductsAndRender(),setupGarage(!1)}const decideWhatHappensAfterFormChangeInSearchPage=async e=>{customYmm.currentPage=1;var[t,r,a,s,o,c]=returnSelections(e),m=(clearContentsForCategoryPage(),await fetchYmmOnlyDataAndRender(e));manageHighlighted(e),m.drive_type_arr=m.drive_type_arr.filter(e=>""!==e),m.fuel_type_arr=m.fuel_type_arr.filter(e=>""!==e),m.num_doors_arr=m.num_doors_arr.filter(e=>""!==e),t&&r&&a&&enableSelectTag(e,"btn-go"),m.makes.length&&0==r||m.models.length&&0==a||m.drive_type_arr.length&&""==s||m.fuel_type_arr.length&&""==o||m.num_doors_arr.length&&""==c?!0!==customYmm.hideProductsUntilSelected&&fetchProductsAndRender():(removeHighlighted(e),saveOrGoForSearchPage(e))};function displayStars(e){if(0===Math.ceil(e)){var t="";for(i=0;i<5;i++)t+=returnGreyedOutStar()}else{t="";for(i=0;i<Math.ceil(e);i++)t+=returnColorfulStar()}return t}function formatPrice(e){return(e=parseFloat(e))%1!=0?e.toLocaleString(void 0,{minimumFractionDigits:2,maximumFractionDigits:2}):e.toLocaleString(void 0,{minimumFractionDigits:0,maximumFractionDigits:0})}function displayPrices(e,t){return null!==e&&0<e?`
-            <span class="sale-price">$${formatPrice(t)}</span>
-            <span class="compare-at-price ymm-product-price default-price">$${formatPrice(e)}</span>
-        `:`
-            <span class ="sale-price">$${formatPrice(t)}</span>
-        `}function displayAddToCartButton(e){return customYmm.settings.showButtonsInProductCards?`
-            <div class="add-to-cart-btn">
-                <a href="#" onclick="addToCart(${e})"  data-event-type="product-click" data-button-type="add-cart" class="button button--secondary card-figcaption-button halo-add-to-cart" data-product-id="${e}" data-wait-message="Adding to Cart…">Add to Cart</a>
-            </div>`:""}function displayOrHideStars(e){return void 0!==customYmm.settings.showReviewsInProductCards?`
-            <div class="stars-and-review-count">
-                <span class="stars">${displayStars(e.reviewsRatingSum)}</span>
-                <span class="review-count">(${e.reviewCount})</span>    
-            </div>
-        `:""}function returnProductImage(e){return null!=e?`
-            <img class ="ymm-product-thumbnail" src = "${e}"  />
-        `:`
-        <svg class="placeholder-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 525.5 525.5"><path d="M375.5 345.2c0-.1 0-.1 0 0 0-.1 0-.1 0 0-1.1-2.9-2.3-5.5-3.4-7.8-1.4-4.7-2.4-13.8-.5-19.8 3.4-10.6 3.6-40.6 1.2-54.5-2.3-14-12.3-29.8-18.5-36.9-5.3-6.2-12.8-14.9-15.4-17.9 8.6-5.6 13.3-13.3 14-23 0-.3 0-.6.1-.8.4-4.1-.6-9.9-3.9-13.5-2.1-2.3-4.8-3.5-8-3.5h-54.9c-.8-7.1-3-13-5.2-17.5-6.8-13.9-12.5-16.5-21.2-16.5h-.7c-8.7 0-14.4 2.5-21.2 16.5-2.2 4.5-4.4 10.4-5.2 17.5h-48.5c-3.2 0-5.9 1.2-8 3.5-3.2 3.6-4.3 9.3-3.9 13.5 0 .2 0 .5.1.8.7 9.8 5.4 17.4 14 23-2.6 3.1-10.1 11.7-15.4 17.9-6.1 7.2-16.1 22.9-18.5 36.9-2.2 13.3-1.2 47.4 1 54.9 1.1 3.8 1.4 14.5-.2 19.4-1.2 2.4-2.3 5-3.4 7.9-4.4 11.6-6.2 26.3-5 32.6 1.8 9.9 16.5 14.4 29.4 14.4h176.8c12.9 0 27.6-4.5 29.4-14.4 1.2-6.5-.5-21.1-5-32.7zm-97.7-178c.3-3.2.8-10.6-.2-18 2.4 4.3 5 10.5 5.9 18h-5.7zm-36.3-17.9c-1 7.4-.5 14.8-.2 18h-5.7c.9-7.5 3.5-13.7 5.9-18zm4.5-6.9c0-.1.1-.2.1-.4 4.4-5.3 8.4-5.8 13.1-5.8h.7c4.7 0 8.7.6 13.1 5.8 0 .1 0 .2.1.4 3.2 8.9 2.2 21.2 1.8 25h-30.7c-.4-3.8-1.3-16.1 1.8-25zm-70.7 42.5c0-.3 0-.6-.1-.9-.3-3.4.5-8.4 3.1-11.3 1-1.1 2.1-1.7 3.4-2.1l-.6.6c-2.8 3.1-3.7 8.1-3.3 11.6 0 .2 0 .5.1.8.3 3.5.9 11.7 10.6 18.8.3.2.8.2 1-.2.2-.3.2-.8-.2-1-9.2-6.7-9.8-14.4-10-17.7 0-.3 0-.6-.1-.8-.3-3.2.5-7.7 3-10.5.8-.8 1.7-1.5 2.6-1.9h155.7c1 .4 1.9 1.1 2.6 1.9 2.5 2.8 3.3 7.3 3 10.5 0 .2 0 .5-.1.8-.3 3.6-1 13.1-13.8 20.1-.3.2-.5.6-.3 1 .1.2.4.4.6.4.1 0 .2 0 .3-.1 13.5-7.5 14.3-17.5 14.6-21.3 0-.3 0-.5.1-.8.4-3.5-.5-8.5-3.3-11.6l-.6-.6c1.3.4 2.5 1.1 3.4 2.1 2.6 2.9 3.5 7.9 3.1 11.3 0 .3 0 .6-.1.9-1.5 20.9-23.6 31.4-65.5 31.4h-43.8c-41.8 0-63.9-10.5-65.4-31.4zm91 89.1h-7c0-1.5 0-3-.1-4.2-.2-12.5-2.2-31.1-2.7-35.1h3.6c.8 0 1.4-.6 1.4-1.4v-14.1h2.4v14.1c0 .8.6 1.4 1.4 1.4h3.7c-.4 3.9-2.4 22.6-2.7 35.1v4.2zm65.3 11.9h-16.8c-.4 0-.7.3-.7.7 0 .4.3.7.7.7h16.8v2.8h-62.2c0-.9-.1-1.9-.1-2.8h33.9c.4 0 .7-.3.7-.7 0-.4-.3-.7-.7-.7h-33.9c-.1-3.2-.1-6.3-.1-9h62.5v9zm-12.5 24.4h-6.3l.2-1.6h5.9l.2 1.6zm-5.8-4.5l1.6-12.3h2l1.6 12.3h-5.2zm-57-19.9h-62.4v-9h62.5c0 2.7 0 5.8-.1 9zm-62.4 1.4h62.4c0 .9-.1 1.8-.1 2.8H194v-2.8zm65.2 0h7.3c0 .9.1 1.8.1 2.8H259c.1-.9.1-1.8.1-2.8zm7.2-1.4h-7.2c.1-3.2.1-6.3.1-9h7c0 2.7 0 5.8.1 9zm-7.7-66.7v6.8h-9v-6.8h9zm-8.9 8.3h9v.7h-9v-.7zm0 2.1h9v2.3h-9v-2.3zm26-1.4h-9v-.7h9v.7zm-9 3.7v-2.3h9v2.3h-9zm9-5.9h-9v-6.8h9v6.8zm-119.3 91.1c-2.1-7.1-3-40.9-.9-53.6 2.2-13.5 11.9-28.6 17.8-35.6 5.6-6.5 13.5-15.7 15.7-18.3 11.4 6.4 28.7 9.6 51.8 9.6h6v14.1c0 .8.6 1.4 1.4 1.4h5.4c.3 3.1 2.4 22.4 2.7 35.1 0 1.2.1 2.6.1 4.2h-63.9c-.8 0-1.4.6-1.4 1.4v16.1c0 .8.6 1.4 1.4 1.4H256c-.8 11.8-2.8 24.7-8 33.3-2.6 4.4-4.9 8.5-6.9 12.2-.4.7-.1 1.6.6 1.9.2.1.4.2.6.2.5 0 1-.3 1.3-.8 1.9-3.7 4.2-7.7 6.8-12.1 5.4-9.1 7.6-22.5 8.4-34.7h7.8c.7 11.2 2.6 23.5 7.1 32.4.2.5.8.8 1.3.8.2 0 .4 0 .6-.2.7-.4 1-1.2.6-1.9-4.3-8.5-6.1-20.3-6.8-31.1H312l-2.4 18.6c-.1.4.1.8.3 1.1.3.3.7.5 1.1.5h9.6c.4 0 .8-.2 1.1-.5.3-.3.4-.7.3-1.1l-2.4-18.6H333c.8 0 1.4-.6 1.4-1.4v-16.1c0-.8-.6-1.4-1.4-1.4h-63.9c0-1.5 0-2.9.1-4.2.2-12.7 2.3-32 2.7-35.1h5.2c.8 0 1.4-.6 1.4-1.4v-14.1h6.2c23.1 0 40.4-3.2 51.8-9.6 2.3 2.6 10.1 11.8 15.7 18.3 5.9 6.9 15.6 22.1 17.8 35.6 2.2 13.4 2 43.2-1.1 53.1-1.2 3.9-1.4 8.7-1 13-1.7-2.8-2.9-4.4-3-4.6-.2-.3-.6-.5-.9-.6h-.5c-.2 0-.4.1-.5.2-.6.5-.8 1.4-.3 2 0 0 .2.3.5.8 1.4 2.1 5.6 8.4 8.9 16.7h-42.9v-43.8c0-.8-.6-1.4-1.4-1.4s-1.4.6-1.4 1.4v44.9c0 .1-.1.2-.1.3 0 .1 0 .2.1.3v9c-1.1 2-3.9 3.7-10.5 3.7h-7.5c-.4 0-.7.3-.7.7 0 .4.3.7.7.7h7.5c5 0 8.5-.9 10.5-2.8-.1 3.1-1.5 6.5-10.5 6.5H210.4c-9 0-10.5-3.4-10.5-6.5 2 1.9 5.5 2.8 10.5 2.8h67.4c.4 0 .7-.3.7-.7 0-.4-.3-.7-.7-.7h-67.4c-6.7 0-9.4-1.7-10.5-3.7v-54.5c0-.8-.6-1.4-1.4-1.4s-1.4.6-1.4 1.4v43.8h-43.6c4.2-10.2 9.4-17.4 9.5-17.5.5-.6.3-1.5-.3-2s-1.5-.3-2 .3c-.1.2-1.4 2-3.2 5 .1-4.9-.4-10.2-1.1-12.8zm221.4 60.2c-1.5 8.3-14.9 12-26.6 12H174.4c-11.8 0-25.1-3.8-26.6-12-1-5.7.6-19.3 4.6-30.2H197v9.8c0 6.4 4.5 9.7 13.4 9.7h105.4c8.9 0 13.4-3.3 13.4-9.7v-9.8h44c4 10.9 5.6 24.5 4.6 30.2z"></path><path d="M286.1 359.3c0 .4.3.7.7.7h14.7c.4 0 .7-.3.7-.7 0-.4-.3-.7-.7-.7h-14.7c-.3 0-.7.3-.7.7zm5.3-145.6c13.5-.5 24.7-2.3 33.5-5.3.4-.1.6-.5.4-.9-.1-.4-.5-.6-.9-.4-8.6 3-19.7 4.7-33 5.2-.4 0-.7.3-.7.7 0 .4.3.7.7.7zm-11.3.1c.4 0 .7-.3.7-.7 0-.4-.3-.7-.7-.7H242c-19.9 0-35.3-2.5-45.9-7.4-.4-.2-.8 0-.9.3-.2.4 0 .8.3.9 10.8 5 26.4 7.5 46.5 7.5h38.1zm-7.2 116.9c.4.1.9.1 1.4.1 1.7 0 3.4-.7 4.7-1.9 1.4-1.4 1.9-3.2 1.5-5-.2-.8-.9-1.2-1.7-1.1-.8.2-1.2.9-1.1 1.7.3 1.2-.4 2-.7 2.4-.9.9-2.2 1.3-3.4 1-.8-.2-1.5.3-1.7 1.1s.2 1.5 1 1.7z"></path><path d="M275.5 331.6c-.8 0-1.4.6-1.5 1.4 0 .8.6 1.4 1.4 1.5h.3c3.6 0 7-2.8 7.7-6.3.2-.8-.4-1.5-1.1-1.7-.8-.2-1.5.4-1.7 1.1-.4 2.3-2.8 4.2-5.1 4zm5.4 1.6c-.6.5-.6 1.4-.1 2 1.1 1.3 2.5 2.2 4.2 2.8.2.1.3.1.5.1.6 0 1.1-.3 1.3-.9.3-.7-.1-1.6-.8-1.8-1.2-.5-2.2-1.2-3-2.1-.6-.6-1.5-.6-2.1-.1zm-38.2 12.7c.5 0 .9 0 1.4-.1.8-.2 1.3-.9 1.1-1.7-.2-.8-.9-1.3-1.7-1.1-1.2.3-2.5-.1-3.4-1-.4-.4-1-1.2-.8-2.4.2-.8-.3-1.5-1.1-1.7-.8-.2-1.5.3-1.7 1.1-.4 1.8.1 3.7 1.5 5 1.2 1.2 2.9 1.9 4.7 1.9z"></path><path d="M241.2 349.6h.3c.8 0 1.4-.7 1.4-1.5s-.7-1.4-1.5-1.4c-2.3.1-4.6-1.7-5.1-4-.2-.8-.9-1.3-1.7-1.1-.8.2-1.3.9-1.1 1.7.7 3.5 4.1 6.3 7.7 6.3zm-9.7 3.6c.2 0 .3 0 .5-.1 1.6-.6 3-1.6 4.2-2.8.5-.6.5-1.5-.1-2s-1.5-.5-2 .1c-.8.9-1.8 1.6-3 2.1-.7.3-1.1 1.1-.8 1.8 0 .6.6.9 1.2.9z"></path></svg>
-    `}function displayBrand(e){return customYmm.settings.showBrandInProductCards?`
-            <div class="brand-name">
-                ${e}
-            </div>        
-        `:""}function scrollToTop(){window.scrollTo({top:0,behavior:"smooth"})}function constructProductDiv(e){var t=customYmm.settings.productCardImageAspectRatio;return t.length&&(t="4:3"==t?"card_ratio_4_3":"1:1"==t?"card_ratio_1_1":""),`
-            <div class = "product">
-                
-                <div class="ymm-product-wrapper ymm-product-item">
-                    <div class="ymm-product-wrapper-holder">
-                        <a href = "${customYmm.siteURL}/products/${e.url}/">
-                            <div class  = "ymm-product-thumbnail-wrapper ${t}">
-                               ${returnProductImage(e.thumbnail)}
-                            </div>
-                         </a>
-                        <div class="ymm-product-wrapper-item">
-                            <div class = "ymm-product-name-price">
-                                
-                                ${displayBrand(e.brand)}
-                                
-                                <div class= "ymm-product-name">
-                                     <a href = "${customYmm.siteURL}/products/${e.url}/">
-                                        ${e.name}
-                                    </a>
-                                </div>
-                                
-
-                                <div class="sale-and-default-price">
-                                    
-                                    ${displayPrices(e.compare_at_price,e.price)}
-            
-                                </div>
-                            </div>
-                    
-                            <div class="product-action-buttons">
-                                 ${displayAddToCartButton(e.variant_id)} 
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        
-         `}function renderProducts(e,t=0){document.querySelector(".ymm-products").innerHTML="",document.querySelector(".no-results-message-outer").innerHTML="",document.querySelector(".search-results-count").innerHTML="",0<customYmm.searchResultsCount?(document.querySelector(".search-results-count").innerHTML=generateProductRangeText(),document.querySelector(".ymm-products").innerHTML=e.map(e=>constructProductDiv(e)).join("")):document.querySelector(".no-results-message-outer").innerHTML=`
-            <div class="no-results-message">
-                <p class="no-results-msg-inner">
-                    No any products exist for this filter combination.
-                    <br>
-                    <a href = "${customYmm.siteURL}/search/">Please Click Here</a> to find all the parts that fit your selection or <a href="#"> ${returnClearAllText()} </a> filters.
-                </p>
-            </div>
-        `}function renderCheckbox(e){return`
-            
-            <input 
-            
-                id = "shop-by-category-${e.url}"
-                ${customYmm.isInCategoryPage&&0==e.parent_id?"disabled":""} 
-                type = "checkbox" 
-                data-filter-type = "category"
-                name = "shop-by-category"
-                data-term = "${e.url}"
-                data-category-name='${e.name.trim()}'
-                class  = "cb-filter" 
-                data-category-url = "${e.url}"
-                ${customYmm.selectedCategories.includes(e.url)?"checked":""} 
-            
-            />
-            
-        `}function displayEachCategory(e){return`
-            <div class="ymm-categories-item">
-                ${renderCheckbox(e)}
-
-                <label for="shop-by-category-${e.url}" class="form-label--checkbox">
-                    <span class="category-name">${e.name}</span>
-                    <span class="category-hits">${e.hits}</span>
-                </label>
-            </div>    
-        `}function fetchPreviousPage(){--customYmm.currentPage,fetchProductsAndRender()}function fetchNextPage(){customYmm.currentPage+=1,fetchProductsAndRender()}function fetchNewData(e){customYmm.currentPage=e,fetchProductsAndRender()}function generatePagination(t,e,r){console.log(t,e,r);var a=Math.ceil(r/e),s=window.innerWidth<768?0:2,o=[];if(1<t&&o.push({label:"Previous",page:t-1}),a<=(totalPagesThreshold=window.innerWidth<768?3:6))for(let e=1;e<=a;e++)o.push({label:String(e),page:e});else{for(let e=Math.max(1,t-s);e<=Math.min(a,t+s);e++)o.push({label:String(e),page:e});t+s<a&&(o.push({label:"...",disabled:!0}),o.push({label:String(a),page:a}))}return t<a&&o.push({label:"Next",page:t+1}),console.log(o),`
-        <ul class="pagination">
-            ${o.map(e=>`
-            <li 
-                class="pagination-link ${customYmm.currentPage==e.page?"active":""} ${"Previous"==e.label||"Next"==e.label?"pagination-btn":""} ${"..."==e.label?"disabled":""}"
-                onclick="${"..."!=e.label&&customYmm.currentPage!=e.page?"fetchNewData("+e.page+")":""} "
-            >
-                ${"Previous"==e.label?returnPreviousIcon():"Next"==e.label?returnNextIcon():e.label}
-            </li>
-        `).join("")}
-        </ul>
-        <div class="search-results-count">
-            ${generateProductRangeText()}
-        </div>
-    `}function generateProductRangeText(){if(0==customYmm.searchResultsCount)return"";currentPage=customYmm.currentPage,totalResults=customYmm.searchResultsCount,productsPerPage=12;var e=(currentPage-1)*productsPerPage+1,t=currentPage*productsPerPage;return`<span class="results-range">${e}-${t>totalResults?totalResults:t}</span>`+` of <span class="total-results"> ${totalResults} </span> products`}function hideOrShowMobileFilter(){document.querySelector(".background-overlay").addEventListener("click",()=>hideOrShowMobileFilter()),document.querySelector(customYmm.filtersWrapperMobile)&&(document.querySelector(customYmm.filtersWrapperMobile).classList.toggle("mobile-filters-open"),document.body.classList.toggle("mobile-filter-overlay"))}function convertCategoriesToHierarchialForm(e){const r={},a=[];return e.forEach(e=>{e.children=[],r[e.id]=e}),e.forEach(e=>{var t;0===parseInt(e.parent_id)?a.push(e):(t=r[e.parent_id])&&t.children.push(e)}),a}function displayCategories(e){0<e.length&&(e=e,document.querySelector(".ymm-categories").innerHTML=`
-                <div class="collapsible-wrapper">
-                    <div class="collapsible-title-icon" onclick="hideOrShowCollapsibleContent(event)" >
-                        <h3>Category</h3>
-                        <div class="collapsible-toggle-icon">${returnArrowLeft()}</div>
-                    </div>
-                    <div class="collapsible-content">
-                        <ul id="tree" class="tree"></ul>
-                    </div>
-                </div>
-            `,renderTree(e,document.getElementById("tree")))}function renderTree(e,a){e.forEach(e=>{var t,r=document.createElement("li");r.innerHTML=displayEachCategory(e),a.appendChild(r),0<e.children.length&&((t=document.createElement("ul")).className=`tree  ${customYmm.selectedCategories.includes(e.url)?"":"hidden"} `,r.appendChild(t),renderTree(e.children,t))})}function uncheckSiblingsAndHideChildren(e){function r(e){e=e.querySelector("ul");e&&(e.classList.add("hidden"),e.querySelectorAll('input[type="checkbox"]').forEach(e=>{e.checked=!1}))}const a=e.closest("li");a&&Array.from(a.parentElement.children).forEach(e=>{var t;e!==a&&((t=e.querySelector('input[type="checkbox"]'))&&(t.checked=!1),r(e))}),e.checked||e.closest("li").querySelector("ul")&&(e.closest("li").querySelector("ul").classList.add("hidden"),r(e.closest("li")))}function createFiltersMobileWrapperAndAppend(){var e=document.createElement("div");e.id="filters-wrapper-mobile",e.className=customYmm.filtersWrapperMobileSidebarClass,document.body.appendChild(e)}function assignListenerToTheCheckBoxes(){const t=document.querySelectorAll(".cb-filter");function r(e){customYmm.currentPage=1,customYmm.loadMore=!0,"category"==e.target.getAttribute("data-filter-type")&&uncheckSiblingsAndHideChildren(e.target);e=Array.from(t).filter(e=>e.checked);const a=[];let s=[],o=[];e.forEach(e=>{switch(e.getAttribute("data-filter-type")){case"category":var t=e.getAttribute("data-category-url"),r=e.getAttribute("data-category-name");s.push(t),customYmm.selectedCategoryURLVsName[t]=r;break;case"brand":a.push(e.getAttribute("data-term"));break;case"price":o.push(e.getAttribute("data-term"))}}),customYmm.selectedCategories=s,customYmm.selectedBrands=a,customYmm.selectedPrices=o,0<s.length?customYmm.selectedCategory=s[s.length-1]:(customYmm.selectedCategory=!1,setDefaultCategory()),setURLparams(),fetchProductsAndRender()}t.forEach(e=>{e.addEventListener("change",r)})}function fillupFiltersWrappers(){document.querySelector(".ymm-filters-selections")&&(document.querySelector(".ymm-filters-selections").innerHTML="",customYmm.searchQuery.trim().length&&(document.querySelector(".ymm-filters-selections").innerHTML+=`
-                <div class="filter-item-wrapper" onclick="removeSelectedQuery()">
-                    <span>
-                        <strong>Query:</strong> 
-                        <span class="query-name filter-name">${customYmm.searchQuery}</span>
-                    </span>
-                    <span class='close-icon'>
-                        ${returnCloseIcon()}
-                    </span>
-                </div>
-            `),customYmm.selectedCategories&&(document.querySelector(".ymm-filters-selections").innerHTML+=customYmm.selectedCategories.map(e=>`
-                                                    <div class="filter-item-wrapper category-name-wrapper ${customYmm.isInCategoryPage?"greyed-out":""}" 
-                                                        onclick="removeSelectedCategory('${e}');fetchProductsAndRender()">
-                                                        <span>
-                                                            <strong>Category:</strong> 
-                                                            <span class="category-name filter-name"> ${customYmm.selectedCategoryURLVsName[e]||e.replaceAll("/"," ").trim()}</span>
-                                                        </span>
-                                                        <span class="close-icon">${customYmm.isInCategoryPage?"":returnCloseIcon()}</span>
-                                                    </div>
-                                                `).join("")),customYmm.selectedBrands.length&&(document.querySelector(".ymm-filters-selections").innerHTML+=customYmm.selectedBrands.map(e=>`
-                                                    <div class="brand-name-wrapper ${customYmm.isInBrandPage?"greyed-out":""} filter-item-wrapper" onclick="removeSelectedBrand();fetchProductsAndRender()">
-                                                        <span>
-                                                            <strong>Brand:</strong> 
-                                                            <span class="brand-name filter-name"> ${e}</span>
-                                                        </span>
-                                                        <span class="close-icon">
-                                                            ${customYmm.isInBrandPage?"":returnCloseIcon()}
-                                                        </span>
-                                                    </div>
-                                                `).join("")),customYmm.selectedPrices.length)&&(document.querySelector(".ymm-filters-selections").innerHTML+=customYmm.selectedPrices.map(e=>`
-                                                    <div class="price-name-wrapper filter-item-wrapper" onclick="removeSelectedPrice();fetchProductsAndRender()">
-                                                        <span>
-                                                            <strong>Price:</strong> 
-                                                            <span class="price-name filter-name"> ${customYmm.priceIdsAndLabels[e]||e}</span>
-                                                        </span>
-                                                        <span class="close-icon"">
-                                                            ${returnCloseIcon()}
-                                                        </span>
-                                                    </div>
-                                                `).join("")),document.querySelector(".ymm-brands")&&customYmm.brands&&(brandData=customYmm.brands,document.querySelector(".ymm-brands").innerHTML=`
-            <div class="collapsible-wrapper">
-                <div class="collapsible-title-icon" onclick="hideOrShowCollapsibleContent(event)">
-                    <h3>Brand</h3>
-                    <div class="collapsible-toggle-icon" >${returnArrowLeft()}</div>
-                </div>
-                <div class="collapsible-content">
-                    ${brandData.map(e=>createBrandItem(e)).join(" ")}
-                </div>
-            </div>
-        `);var e=customYmm.categories;e?(displayCategories(e),displayPriceRanges(),assignListenerToTheCheckBoxes()):document.querySelector(".ymm-filters-selections").innerHTML="";document.querySelector(".sort-by").innerHTML=`
-        <div class="sort-by-wrapper-inner">
-            <select class="sort-by-select select" onChange="handleSortByChange(event)">
-                ${[{value:"default",label:"Default"},{value:"price-low-to-high",label:"Price Low to High"},{value:"price-high-to-low",label:"Price High to Low"},{value:"title-a-to-z",label:"Title A to Z"},{value:"title-z-to-a",label:"Title Z to A"}].map(({value:e,label:t})=>`
-                            <option value="${e}" ${e===customYmm.sortBy?"selected":""}>${t}</option>
-                        `).join(" ")}
-            </select>
-        </div>
-    `}function displayResponsiveFilters(){(customYmm.isInCategoryPage||customYmm.isInSearchPage||customYmm.isInBrandPage)&&(1024<window.innerWidth?(console.log("display only in desktop "),document.querySelector(customYmm.filtersWrapperDesktop).innerHTML=returnFiltersWrappers(),document.querySelector(customYmm.filtersWrapperMobile).innerHTML=""):(console.log("display only in mobile"),document.querySelector(customYmm.filtersWrapperDesktop).innerHTML="",document.querySelector(customYmm.filtersWrapperMobile).innerHTML=returnFiltersWrappers()),fillupFiltersWrappers())}function createBrandItem(e){return`
-        <div class="input-and-label">
-            <input ${customYmm.isInBrandPage?"disabled":""} ${customYmm.selectedBrands.includes(e.name)?"checked":""} name = "cb-filter" data-filter-type = "brand" class = "cb-filter" type = "checkbox" data-brand-id = "${e.id}" id = "cb-${e.id}" data-term = "${e.name}" >
-            <label for  = "cb-${e.id}" class="form-label--checkbox">
-                <span class="brand-name">${e.name}</span>
-                <span class="brand-hits">${e.hits}</span>
-            </label>
-        </div>
-   `}function removeAllFilters(){customYmm.selectedCategories.length&&removeSelectedCategory(customYmm.selectedCategories[0]),removeSelectedBrand(),removeSelectedPrice(),customYmm.searchQuery="",fetchProductsAndRender()}function returnClearAllText(){return customYmm.selectedPrices.length||customYmm.selectedBrands.length||customYmm.searchQuery.length||!customYmm.isInCategoryPage&&customYmm.selectedCategories.length?'<span class="remove-all" onclick="removeAllFilters()">Clear All</span>':'<span class="disabled remove-all">Clear All</span>'}function returnFiltersWrappers(){return`
-
-        <div class="ymm-filters">
-            
-            <div class="ymm-brands-wrapper ymm-filters-wrapper-inner">
-                
-                <div class="filters-heading">
-                    <h2 class="h2">FILTER BY</h2>
-                </div>
-                
-                <div class="ymm-categories">
-                    
-                </div>
-
-                <div class = "ymm-brands">
-                    
-                </div>
-
-                <div class="ymm-price">
-                    
-                </div>
-                
-            </div>
-            
-            <div>
-                ${returnClearAllText()}
-            </div>
-
-        </div>
-
-        <a href="#" class="close-mobile-filter" onclick="hideOrShowMobileFilter()">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path d="M 38.982422 6.9707031 A 2.0002 2.0002 0 0 0 37.585938 7.5859375 L 24 21.171875 L 10.414062 7.5859375 A 2.0002 2.0002 0 0 0 8.9785156 6.9804688 A 2.0002 2.0002 0 0 0 7.5859375 10.414062 L 21.171875 24 L 7.5859375 37.585938 A 2.0002 2.0002 0 1 0 10.414062 40.414062 L 24 26.828125 L 37.585938 40.414062 A 2.0002 2.0002 0 1 0 40.414062 37.585938 L 26.828125 24 L 40.414062 10.414062 A 2.0002 2.0002 0 0 0 38.982422 6.9707031 z"></path></svg>
-        </a>
-    `}function hideOrShowCollapsibleContent(e){var e=e.target.closest(".collapsible-wrapper"),t=e.querySelector(".collapsible-content"),r=window.getComputedStyle(t),e=e.querySelector(".collapsible-toggle-icon");"none"===r.display?(t.style.display="block",e.innerHTML=returnArrowLeft()):(t.style.display="none",e.innerHTML=returnArrowDown())}function removeSelectedCategory(e){customYmm.isInCategoryPage||(e=customYmm.selectedCategories.indexOf(e),console.log(customYmm.selectedCategories,"1"),customYmm.selectedCategories.splice(e),console.log(customYmm.selectedCategories,"2"),customYmm.selectedCategories.length?customYmm.selectedCategory=customYmm.selectedCategories[customYmm.selectedCategories.length-1]:customYmm.selectedCategory="")}function removeSelectedBrand(){customYmm.isInBrandPage||(customYmm.selectedBrands=[])}function removeSelectedPrice(){customYmm.selectedPrices=[]}function removeSelectedQuery(){customYmm.searchQuery="",fetchProductsAndRender()}window.onresize=function(){console.log("reeized"),displayResponsiveFilters()};const handleSortByChange=e=>{customYmm.sortBy=e.target.value,fetchProductsAndRender()};function displayPriceRanges(){const r=customYmm.priceIdsAndLabels;document.querySelector(".ymm-price").innerHTML=`
-        
-            <div class="collapsible-wrapper">
-                <div  class="collapsible-title-icon" onclick="hideOrShowCollapsibleContent(event)">
-                    <h3>Price</h3>
-                    <div class="collapsible-toggle-icon" >${returnArrowLeft()}</div>
-                </div>
-                <div class="collapsible-content">
-                    ${Object.keys(r).filter(e=>0<customYmm.priceRanngesVsFrequency[e]).map(e=>{return t=e,e=r[e],`
-                <div class="input-and-label">
-                    <input ${customYmm.selectedPrices.includes(t)?"checked":""} data-term = "${t}" name = "cb-filter" data-filter-type = "price" class = "cb-filter" type = "checkbox" data-price-id = "${t}" id = "cb-${t}">
-                    <label for  = "cb-${t}" class="form-label--checkbox">
-                        
-                        <span class="brand-name">${e}</span>
-                        <span class="brand-hits">${customYmm.priceRanngesVsFrequency[t]}</span>                        
-                            
-                    </label>
-                </div>
-            `;var t}).join(" ")}
-                </div>
-            </div>
-        `}function convertArrayOrObjectToArray(e){if(Array.isArray(e))return e;var t,r=[];for(t in e)r.push(e[t]);return r}function filterProductsByBrandIds(r,t){return Object.keys(r).filter(e=>null!=r[e].brand&&t.includes(r[e].brand.pid.toString())).reduce((e,t)=>(e[t]=r[t],e),{})}function returnUniqueObjects(e){const t=new Set;return e.filter(e=>{e=e.id;return!t.has(e)&&(t.add(e),!0)})}function renderCheckbox(e){return`
-            
-            <input 
-            
-                id = "shop-by-category-${e.url}"
-                ${customYmm.isInCategoryPage&&0==e.parent_id?"disabled":""} 
-                type = "checkbox" 
-                data-filter-type = "category"
-                name = "shop-by-category"
-                data-term = "${e.url}"
-                data-category-name='${e.name.trim()}'
-                class  = "cb-filter" 
-                data-category-url = "${e.url}"
-                ${customYmm.selectedCategories.includes(e.url)?"checked":""} 
-            
-            />
-            
-        `}function displayEachCategory(e){return`
-            <div class="ymm-categories-item">
-                ${renderCheckbox(e)}
-
-                <label for="shop-by-category-${e.url}" class="form-label--checkbox">
-                    <span class="category-name">${e.name}</span>
-                    <span class="category-hits">${e.hits}</span>
-                </label>
-            </div>    
-        `}function clearContentsForCategoryPage(){document.querySelector(".ymm-filters-products").style.display="none"}function setSelectedVehicleWithCategoryTitle(){var e,t,r="search-page-ymm-form-container",[a,s,o,,,,]=returnSelections(r);customYmm.isInCategoryPage&&document.querySelector(".page-listing-header--content")&&(e=document.querySelector(".page-listing-header--content")).querySelector("h1.page-heading")&&(t=(e=e.querySelector("h1.page-heading")).innerText,null==customYmm.originalCateogry&&(customYmm.originalCateogry=t),e.innerText=a&&o&&s?returnSelections(r).join(" ")+" "+customYmm.originalCateogry:customYmm.originalCateogry)}function returnCategoryImage(e){return null===e||""==e?`
+        `}function saveOrGoForSearchPage(e){pushToGarage(e),hideYmmFormInSearchPage(),fetchProductsAndRender(),setupGarage(!1)}function hideOrShowFormAfterLoadingDropdownValues(e,t){var[r,a,s,o]=returnSelections(t);e.sub_model_arr=e.sub_model_arr.filter(e=>""!==e),r&&a&&s&&(enableSelectTag(t,"btn-go"),enableSelectTag(t,"btn-clear")),(e.makes.length&&0==a||e.models.length&&0==s||e.sub_model_arr.length&&""==o||0==a||0==r||0==s?displayYmmFormInSearchPage:hideYmmFormInSearchPage)()}const decideWhatHappensAfterFormChangeInSearchPage=async e=>{customYmm.currentPage=1;var[t,r,a,s]=returnSelections(e),o=(setURLparams(),clearContentsForCategoryPage(),await fetchYmmOnlyDataAndRender(e));manageHighlighted(e),o.sub_model_arr=o.sub_model_arr.filter(e=>""!==e),t&&r&&a&&enableSelectTag(e,"btn-go"),o.makes.length&&0==r||o.models.length&&0==a||o.sub_model_arr.length&&""==s?!0!==customYmm.hideProductsUntilSelected&&fetchProductsAndRender():(removeHighlighted(e),saveOrGoForSearchPage(e))};function decideWhereToGoWhenGarageItemClicked(r){var t="search-page-ymm-form-container",a=(customYmm.garage.forEach((e,t)=>{e.selected&&(customYmm.garage[t].selected=!1)}),customYmm.garage.forEach((e,t)=>{e.id==r&&(customYmm.garage[t].selected=!0)}),setCookie("garage",JSON.stringify(customYmm.garage)),customYmm.garage.filter(e=>e.id==r)[0]);if(customYmm.isInSearchPage||customYmm.isInCategoryPage)setupGarage(!1),customYmm[t].selections.year=a.year,customYmm[t].selections.make=a.make,customYmm[t].selections.model=a.model,setURLparams(),fetchProductsAndRender();else{var t=window.location.href,t=new URL(t),s=t.protocol,t=t.hostname;window.location.href=s+"//"+t+"/search/";let e=[a.year,a.make,a.model,a.sub_model];(e=e.filter(e=>!1!==e&&""!==e).map(e=>e.replaceAll(" ","_"))).length&&e.join(">")}}function setDefaultCategory(){var e;customYmm.selectedCategory=!1,customYmm.isInCategoryPage&&("local"==customYmm.development?(categoryURL="/axles-and-gears/",customYmm.selectedCategory=categoryURL):(e=window.location.href,e=new URL(e).pathname,customYmm.selectedCategory=e.split("?")[0].split("/").reverse()[0],console.log("selectedCategory",customYmm.selectedCategory),customYmm.selectedCategories.push(customYmm.selectedCategory)))}async function setInitialSelections(){function e(e){return new URLSearchParams(window.location.search).get(e)}void 0!==customYmm.settings&&void 0!==customYmm.settings.hideProductsUntilSelected?customYmm.hideProductsUntilSelected=customYmm.settings.hideProductsUntilSelected:customYmm.hideProductsUntilSelected=!1,customYmm.products={},customYmm.loadMore=!0,customYmm.productsPerPage=12,customYmm.currentPage=1,customYmm.selectedCategories=[],customYmm.selectedBrands=[],customYmm.selectedPrices=[],customYmm.selectedCategory=!1,setDefaultCategory(),retrieveURLparams();var t,r=e("sq"),r=(null!==r&&(customYmm.searchQuery=r.trim()),customYmm.isInBrandPage&&null!==(r=e("q"))&&customYmm.selectedBrands.push(r.replaceAll("%20"," ")),"search-page-ymm-form-container");let a=!1;(customYmm.isInCategoryPage||customYmm.isInBrandPage||customYmm.isInSearchPage)&&0<customYmm.garage.length?(customYmm.garage.length&&((t=customYmm.garage.filter(e=>e.selected)).length?a=t[0]:!0===customYmm.hideProductsUntilSelected&&(document.getElementById("garage-btn").click(),document.getElementById("add-vehicle-to-garage-button").click())),a&&!window.location.href.includes("/v/")&&(ymm=a,customYmm[r].selections={year:ymm.year,make:ymm.make,model:ymm.model,sub_model:ymm.sub_model},manageHighlighted(r))):(customYmm.isInCategoryPage||customYmm.isInSearchPage||customYmm.isInBrandPage)&&!0===customYmm.hideProductsUntilSelected&&document.getElementById("garage-btn").click(),""==customYmm.searchQuery&&!1!==customYmm.hideProductsUntilSelected&&!1===a||fetchProductsAndRender()}function returnCategoryImage(e){return null===e||""==e?`
             <div class="cm_vehicle-categories_category-image-container cm_vehicle-categories_link">
                 <svg class="placeholder-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 525.5 525.5"><path d="M375.5 345.2c0-.1 0-.1 0 0 0-.1 0-.1 0 0-1.1-2.9-2.3-5.5-3.4-7.8-1.4-4.7-2.4-13.8-.5-19.8 3.4-10.6 3.6-40.6 1.2-54.5-2.3-14-12.3-29.8-18.5-36.9-5.3-6.2-12.8-14.9-15.4-17.9 8.6-5.6 13.3-13.3 14-23 0-.3 0-.6.1-.8.4-4.1-.6-9.9-3.9-13.5-2.1-2.3-4.8-3.5-8-3.5h-54.9c-.8-7.1-3-13-5.2-17.5-6.8-13.9-12.5-16.5-21.2-16.5h-.7c-8.7 0-14.4 2.5-21.2 16.5-2.2 4.5-4.4 10.4-5.2 17.5h-48.5c-3.2 0-5.9 1.2-8 3.5-3.2 3.6-4.3 9.3-3.9 13.5 0 .2 0 .5.1.8.7 9.8 5.4 17.4 14 23-2.6 3.1-10.1 11.7-15.4 17.9-6.1 7.2-16.1 22.9-18.5 36.9-2.2 13.3-1.2 47.4 1 54.9 1.1 3.8 1.4 14.5-.2 19.4-1.2 2.4-2.3 5-3.4 7.9-4.4 11.6-6.2 26.3-5 32.6 1.8 9.9 16.5 14.4 29.4 14.4h176.8c12.9 0 27.6-4.5 29.4-14.4 1.2-6.5-.5-21.1-5-32.7zm-97.7-178c.3-3.2.8-10.6-.2-18 2.4 4.3 5 10.5 5.9 18h-5.7zm-36.3-17.9c-1 7.4-.5 14.8-.2 18h-5.7c.9-7.5 3.5-13.7 5.9-18zm4.5-6.9c0-.1.1-.2.1-.4 4.4-5.3 8.4-5.8 13.1-5.8h.7c4.7 0 8.7.6 13.1 5.8 0 .1 0 .2.1.4 3.2 8.9 2.2 21.2 1.8 25h-30.7c-.4-3.8-1.3-16.1 1.8-25zm-70.7 42.5c0-.3 0-.6-.1-.9-.3-3.4.5-8.4 3.1-11.3 1-1.1 2.1-1.7 3.4-2.1l-.6.6c-2.8 3.1-3.7 8.1-3.3 11.6 0 .2 0 .5.1.8.3 3.5.9 11.7 10.6 18.8.3.2.8.2 1-.2.2-.3.2-.8-.2-1-9.2-6.7-9.8-14.4-10-17.7 0-.3 0-.6-.1-.8-.3-3.2.5-7.7 3-10.5.8-.8 1.7-1.5 2.6-1.9h155.7c1 .4 1.9 1.1 2.6 1.9 2.5 2.8 3.3 7.3 3 10.5 0 .2 0 .5-.1.8-.3 3.6-1 13.1-13.8 20.1-.3.2-.5.6-.3 1 .1.2.4.4.6.4.1 0 .2 0 .3-.1 13.5-7.5 14.3-17.5 14.6-21.3 0-.3 0-.5.1-.8.4-3.5-.5-8.5-3.3-11.6l-.6-.6c1.3.4 2.5 1.1 3.4 2.1 2.6 2.9 3.5 7.9 3.1 11.3 0 .3 0 .6-.1.9-1.5 20.9-23.6 31.4-65.5 31.4h-43.8c-41.8 0-63.9-10.5-65.4-31.4zm91 89.1h-7c0-1.5 0-3-.1-4.2-.2-12.5-2.2-31.1-2.7-35.1h3.6c.8 0 1.4-.6 1.4-1.4v-14.1h2.4v14.1c0 .8.6 1.4 1.4 1.4h3.7c-.4 3.9-2.4 22.6-2.7 35.1v4.2zm65.3 11.9h-16.8c-.4 0-.7.3-.7.7 0 .4.3.7.7.7h16.8v2.8h-62.2c0-.9-.1-1.9-.1-2.8h33.9c.4 0 .7-.3.7-.7 0-.4-.3-.7-.7-.7h-33.9c-.1-3.2-.1-6.3-.1-9h62.5v9zm-12.5 24.4h-6.3l.2-1.6h5.9l.2 1.6zm-5.8-4.5l1.6-12.3h2l1.6 12.3h-5.2zm-57-19.9h-62.4v-9h62.5c0 2.7 0 5.8-.1 9zm-62.4 1.4h62.4c0 .9-.1 1.8-.1 2.8H194v-2.8zm65.2 0h7.3c0 .9.1 1.8.1 2.8H259c.1-.9.1-1.8.1-2.8zm7.2-1.4h-7.2c.1-3.2.1-6.3.1-9h7c0 2.7 0 5.8.1 9zm-7.7-66.7v6.8h-9v-6.8h9zm-8.9 8.3h9v.7h-9v-.7zm0 2.1h9v2.3h-9v-2.3zm26-1.4h-9v-.7h9v.7zm-9 3.7v-2.3h9v2.3h-9zm9-5.9h-9v-6.8h9v6.8zm-119.3 91.1c-2.1-7.1-3-40.9-.9-53.6 2.2-13.5 11.9-28.6 17.8-35.6 5.6-6.5 13.5-15.7 15.7-18.3 11.4 6.4 28.7 9.6 51.8 9.6h6v14.1c0 .8.6 1.4 1.4 1.4h5.4c.3 3.1 2.4 22.4 2.7 35.1 0 1.2.1 2.6.1 4.2h-63.9c-.8 0-1.4.6-1.4 1.4v16.1c0 .8.6 1.4 1.4 1.4H256c-.8 11.8-2.8 24.7-8 33.3-2.6 4.4-4.9 8.5-6.9 12.2-.4.7-.1 1.6.6 1.9.2.1.4.2.6.2.5 0 1-.3 1.3-.8 1.9-3.7 4.2-7.7 6.8-12.1 5.4-9.1 7.6-22.5 8.4-34.7h7.8c.7 11.2 2.6 23.5 7.1 32.4.2.5.8.8 1.3.8.2 0 .4 0 .6-.2.7-.4 1-1.2.6-1.9-4.3-8.5-6.1-20.3-6.8-31.1H312l-2.4 18.6c-.1.4.1.8.3 1.1.3.3.7.5 1.1.5h9.6c.4 0 .8-.2 1.1-.5.3-.3.4-.7.3-1.1l-2.4-18.6H333c.8 0 1.4-.6 1.4-1.4v-16.1c0-.8-.6-1.4-1.4-1.4h-63.9c0-1.5 0-2.9.1-4.2.2-12.7 2.3-32 2.7-35.1h5.2c.8 0 1.4-.6 1.4-1.4v-14.1h6.2c23.1 0 40.4-3.2 51.8-9.6 2.3 2.6 10.1 11.8 15.7 18.3 5.9 6.9 15.6 22.1 17.8 35.6 2.2 13.4 2 43.2-1.1 53.1-1.2 3.9-1.4 8.7-1 13-1.7-2.8-2.9-4.4-3-4.6-.2-.3-.6-.5-.9-.6h-.5c-.2 0-.4.1-.5.2-.6.5-.8 1.4-.3 2 0 0 .2.3.5.8 1.4 2.1 5.6 8.4 8.9 16.7h-42.9v-43.8c0-.8-.6-1.4-1.4-1.4s-1.4.6-1.4 1.4v44.9c0 .1-.1.2-.1.3 0 .1 0 .2.1.3v9c-1.1 2-3.9 3.7-10.5 3.7h-7.5c-.4 0-.7.3-.7.7 0 .4.3.7.7.7h7.5c5 0 8.5-.9 10.5-2.8-.1 3.1-1.5 6.5-10.5 6.5H210.4c-9 0-10.5-3.4-10.5-6.5 2 1.9 5.5 2.8 10.5 2.8h67.4c.4 0 .7-.3.7-.7 0-.4-.3-.7-.7-.7h-67.4c-6.7 0-9.4-1.7-10.5-3.7v-54.5c0-.8-.6-1.4-1.4-1.4s-1.4.6-1.4 1.4v43.8h-43.6c4.2-10.2 9.4-17.4 9.5-17.5.5-.6.3-1.5-.3-2s-1.5-.3-2 .3c-.1.2-1.4 2-3.2 5 .1-4.9-.4-10.2-1.1-12.8zm221.4 60.2c-1.5 8.3-14.9 12-26.6 12H174.4c-11.8 0-25.1-3.8-26.6-12-1-5.7.6-19.3 4.6-30.2H197v9.8c0 6.4 4.5 9.7 13.4 9.7h105.4c8.9 0 13.4-3.3 13.4-9.7v-9.8h44c4 10.9 5.6 24.5 4.6 30.2z"></path><path d="M286.1 359.3c0 .4.3.7.7.7h14.7c.4 0 .7-.3.7-.7 0-.4-.3-.7-.7-.7h-14.7c-.3 0-.7.3-.7.7zm5.3-145.6c13.5-.5 24.7-2.3 33.5-5.3.4-.1.6-.5.4-.9-.1-.4-.5-.6-.9-.4-8.6 3-19.7 4.7-33 5.2-.4 0-.7.3-.7.7 0 .4.3.7.7.7zm-11.3.1c.4 0 .7-.3.7-.7 0-.4-.3-.7-.7-.7H242c-19.9 0-35.3-2.5-45.9-7.4-.4-.2-.8 0-.9.3-.2.4 0 .8.3.9 10.8 5 26.4 7.5 46.5 7.5h38.1zm-7.2 116.9c.4.1.9.1 1.4.1 1.7 0 3.4-.7 4.7-1.9 1.4-1.4 1.9-3.2 1.5-5-.2-.8-.9-1.2-1.7-1.1-.8.2-1.2.9-1.1 1.7.3 1.2-.4 2-.7 2.4-.9.9-2.2 1.3-3.4 1-.8-.2-1.5.3-1.7 1.1s.2 1.5 1 1.7z"></path><path d="M275.5 331.6c-.8 0-1.4.6-1.5 1.4 0 .8.6 1.4 1.4 1.5h.3c3.6 0 7-2.8 7.7-6.3.2-.8-.4-1.5-1.1-1.7-.8-.2-1.5.4-1.7 1.1-.4 2.3-2.8 4.2-5.1 4zm5.4 1.6c-.6.5-.6 1.4-.1 2 1.1 1.3 2.5 2.2 4.2 2.8.2.1.3.1.5.1.6 0 1.1-.3 1.3-.9.3-.7-.1-1.6-.8-1.8-1.2-.5-2.2-1.2-3-2.1-.6-.6-1.5-.6-2.1-.1zm-38.2 12.7c.5 0 .9 0 1.4-.1.8-.2 1.3-.9 1.1-1.7-.2-.8-.9-1.3-1.7-1.1-1.2.3-2.5-.1-3.4-1-.4-.4-1-1.2-.8-2.4.2-.8-.3-1.5-1.1-1.7-.8-.2-1.5.3-1.7 1.1-.4 1.8.1 3.7 1.5 5 1.2 1.2 2.9 1.9 4.7 1.9z"></path><path d="M241.2 349.6h.3c.8 0 1.4-.7 1.4-1.5s-.7-1.4-1.5-1.4c-2.3.1-4.6-1.7-5.1-4-.2-.8-.9-1.3-1.7-1.1-.8.2-1.3.9-1.1 1.7.7 3.5 4.1 6.3 7.7 6.3zm-9.7 3.6c.2 0 .3 0 .5-.1 1.6-.6 3-1.6 4.2-2.8.5-.6.5-1.5-.1-2s-1.5-.5-2 .1c-.8.9-1.8 1.6-3 2.1-.7.3-1.1 1.1-.8 1.8 0 .6.6.9 1.2.9z"></path></svg>
             </div>
         `:`
             <div class="cm_vehicle-categories_category-image-container cm_vehicle-categories_link">
-
                <img class="cm_vehicle-categories_category-image" src="${e}" />
-
             </div>
         
-        `}function fetchSubCategoriesAndRender(){var e=window.location.href,e=new URL(e).pathname.split("?")[0].replace("/collections/","");console.log("categoryurl",e),fetch(customYmm.subCategoryAPI+"?category="+e).then(e=>e.json()).then(e=>{e.shift(),e.length&&(document.querySelector(customYmm.subCatContainerForCategoryPage).style.display="block");document.querySelector(".bd-title").innerText;document.querySelector(customYmm.subCatContainerForCategoryPage).innerHTML='<div class="categories-items-wrapper">'+e.map(e=>(console.log(e),"")).join("")+"</div>"})}function setDefaultCategory(){var e;customYmm.selectedCategory=!1,customYmm.isInCategoryPage&&("local"==customYmm.development?(categoryURL="/axles-and-gears/",customYmm.selectedCategory=categoryURL):(e=window.location.href,e=new URL(e).pathname,customYmm.selectedCategory=e.split("?")[0].split("/").reverse()[0],console.log("selectedCategory",customYmm.selectedCategory),customYmm.selectedCategories.push(customYmm.selectedCategory)))}function createWrappersForHomePage(){var e=document.createElement("div");e.className="container";let t="";document.querySelector("#search_auto_data")&&(t=document.querySelector("#search_auto_data").getAttribute("data-site_width")),e.innerHTML=`
+        `}function fetchSubCategoriesAndRender(){var e=window.location.href,e=new URL(e).pathname.split("?")[0].replace("/collections/","");console.log("categoryurl",e),fetch(customYmm.subCategoryAPI+"?category="+e).then(e=>e.json()).then(e=>{e.shift(),e.length&&(document.querySelector(customYmm.subCatContainerForCategoryPage).style.display="block");document.querySelector(".bd-title").innerText;document.querySelector(customYmm.subCatContainerForCategoryPage).innerHTML='<div class="categories-items-wrapper">'+e.map(e=>(console.log(e),"")).join("")+"</div>"})}function setupForSearchPage(e=!1){e?(insertWrappersForSearchPage(customYmm.categoryPageWrapper),fetchSubCategoriesAndRender()):insertWrappersForSearchPage(customYmm.searchPageWrapper),setupYMMform("search-page-ymm-form-container","search-page-ymm-form-container",decideWhatHappensAfterFormChangeInSearchPage,saveOrGoForSearchPage),setInitialSelections(),displayBreadCrumb()}function pushToGarage(e){var t=customYmm[""+e].selections.year,r=customYmm[""+e].selections.make,a=customYmm[""+e].selections.model,s=customYmm[""+e].selections.sub_model;if(customYmm.garage.length){for(var o=0;o<customYmm.garage.length;o++)(vehicle=customYmm.garage[o]).selected&&(customYmm.garage[o].selected=!1);for(o=0;o<customYmm.garage.length;o++)if((vehicle=customYmm.garage[o]).selected&&(customYmm.garage[o].selected=!1),vehicle.year===t&&vehicle.make===r&&vehicle.model===a)return vehicle.sub_model=s,vehicle.selected=!0,void setCookie("garage",JSON.stringify(customYmm.garage))}customYmm.garage.push({selected:!0,id:customYmm.garage.length?customYmm.garage[customYmm.garage.length-1].id+1:1,year:t,make:r,model:a,sub_model:s}),setCookie("garage",JSON.stringify(customYmm.garage))}function createWrappersForHomePage(){var e=document.createElement("div");e.className="container";let t="";document.querySelector("#search_auto_data")&&(t=document.querySelector("#search_auto_data").getAttribute("data-site_width")),e.innerHTML=`
             <div class="${t} container--medium">
             <div class = "custom-ymm-wrapper-for-home-page ">
 
@@ -551,81 +753,7 @@ async function loadSettingsFile(){customYmm.settingsURL="https://auto.searchalyt
         </div>
 
 
-        `;var r=document.querySelector(customYmm.homePageWrapper);r&&r.insertBefore(e,r.firstChild)}function saveOrGoForHomePage(e){pushToGarage(e),window.location.href=customYmm.siteURL+"/search/"}const decideWhatHappensAfterFormChangeInHomePage=async e=>{var[t,r,a,,,,]=returnSelections(e);(t&&r&&a?(removeHighlighted(e),saveOrGoForHomePage):(await fetchYmmOnlyDataAndRender(e),manageHighlighted))(e)};async function setupForHomePage(){createWrappersForHomePage(),setupYMMform("custom-ymm-form-for-home-page","custom-ymm-form-for-home-page",decideWhatHappensAfterFormChangeInHomePage,saveOrGoForHomePage);var e="custom-ymm-form-for-home-page",t=(hideSelectTag(e,"select-drive-type"),hideSelectTag(e,"select-fuel-type"),hideSelectTag(e,"select-num-doors"),customYmm.garage.filter(e=>e.selected));t.length&&(selectedVehicle=t[0],customYmm[e].selections.year=selectedVehicle.year,customYmm[e].selections.make=selectedVehicle.make,customYmm[e].selections.model=selectedVehicle.model,await fetchYmmOnlyDataAndRender(e),enableSelectTag(e,"btn-go"),enableSelectTag(e,"btn-clear")),hideSelectTag(e,"select-drive-type"),hideSelectTag(e,"select-fuel-type"),hideSelectTag(e,"select-num-doors")}function hideOrShowFormAfterLoadingDropdownValues(e,t){var[r,a,s,o,c,m]=returnSelections(t);e.drive_type_arr=e.drive_type_arr.filter(e=>""!==e),e.fuel_type_arr=e.fuel_type_arr.filter(e=>""!==e),e.num_doors_arr=e.num_doors_arr.filter(e=>""!==e),r&&a&&s&&(enableSelectTag(t,"btn-go"),enableSelectTag(t,"btn-clear")),(e.makes.length&&0==a||e.models.length&&0==s||e.drive_type_arr.length&&""==o||e.fuel_type_arr.length&&""==c||e.num_doors_arr.length&&""==m||0==a||0==r||0==s?displayYmmFormInSearchPage:hideYmmFormInSearchPage)()}function resetDropdownData(e){customYmm[""+e].makes=[],customYmm[""+e].models=[],customYmm[""+e].drive_type_arr=[],customYmm[""+e].fuel_type_arr=[],customYmm[""+e].num_doors_arr=[]}function returnSelections(e){return[customYmm[""+e].selections.year,customYmm[""+e].selections.make,customYmm[""+e].selections.model,customYmm[""+e].selections.drive_type,customYmm[""+e].selections.fuel_type,customYmm[""+e].selections.num_doors]}function returnDropdowns(e){return[customYmm[""+e].years,customYmm[""+e].makes,customYmm[""+e].models,customYmm[""+e].drive_type_arr,customYmm[""+e].fuel_type_arr,customYmm[""+e].num_doors_arr]}function addHighlighted(e,t){try{removeHighlighted(e),document.querySelector("#"+e).querySelector("."+t).classList.add("ymm-select-selected")}catch(e){console.log(e)}}function removeHighlighted(e){document.querySelector("#"+e).querySelector(".ymm-select-selected")&&document.querySelector("#"+e).querySelector(".ymm-select-selected").classList.remove("ymm-select-selected")}function manageHighlighted(e){var[t,r,a,s,o,,]=returnSelections(e);addHighlighted(e,"select-year"),t&&addHighlighted(e,"select-make"),enableSelectTag(e,"btn-clear"),r&&addHighlighted(e,"select-model"),a&&addHighlighted(e,"select-drive-type"),""!=s&&addHighlighted(e,"select-fuel-type"),""!=o&&addHighlighted(e,"select-num-doors")}function assignYmmFormChangeListeners(a,s,e,t){document.querySelector("#"+a).querySelectorAll(".ymm-select").forEach(r=>{r.addEventListener("change",e=>{var t=r.getAttribute("data-type");switch(enableSelectTag(a,"btn-clear"),t){case"select-year":customYmm[""+a].years.includes(parseInt(r.value))||(selectedYear=!1),customYmm[""+a].selections.year=r.value,customYmm[""+a].selections.make=!1,customYmm[""+a].selections.model=!1,customYmm[""+a].selections.drive_type="",customYmm[""+a].selections.fuel_type="",customYmm[""+a].selections.num_doors="",disableSelectTag(a,"select-make"),disableSelectTag(a,"select-model"),disableSelectTag(a,"btn-go");break;case"select-make":customYmm[""+a].selections.model=!1,customYmm[""+a].selections.make=r.value,customYmm[""+a].selections.drive_type="",customYmm[""+a].selections.fuel_type="",customYmm[""+a].selections.num_doors="",disableSelectTag(a,"select-model"),disableSelectTag(a,"btn-go");break;case"select-model":customYmm[""+a].selections.model=r.value,customYmm[""+a].selections.drive_type="",customYmm[""+a].selections.fuel_type="",customYmm[""+a].selections.num_doors="";break;case"select-drive-type":customYmm[""+a].selections.drive_type=r.value;break;case"select-fuel-type":customYmm[""+a].selections.fuel_type=r.value;break;case"select-num-doors":customYmm[""+a].selections.num_doors=r.value}disableSelectTag(a,"select-drive-type"),disableSelectTag(a,"select-fuel-type"),disableSelectTag(a,"select-num-doors"),s(a)})}),document.querySelector("#"+a).querySelector(".btn-clear").addEventListener("click",()=>{clearYmmForm(a,t)}),document.querySelector("#"+a).querySelector(".btn-go").addEventListener("click",()=>{e(a)})}function resetSelectTag(e,t){document.querySelector("#"+e).querySelector("."+t).selectedIndex=0}function clearYmmForm(e,t=!1){customYmm[""+e].selections.year=!1,customYmm[""+e].selections.make=!1,customYmm[""+e].selections.model=!1,customYmm[""+e].selections.drive_type="",customYmm[""+e].selections.num_doors="",customYmm[""+e].selections.fuel_type="",enableSelectTag(e,"select-year"),resetSelectTag(e,"select-year"),disableSelectTag(e,"select-make"),resetSelectTag(e,"select-make"),disableSelectTag(e,"select-model"),resetSelectTag(e,"select-model"),disableSelectTag(e,"select-drive-type"),resetSelectTag(e,"select-drive-type"),disableSelectTag(e,"select-num-doors"),resetSelectTag(e,"select-num-doors"),disableSelectTag(e,"select-fuel-type"),resetSelectTag(e,"select-fuel-type"),disableSelectTag(e,"btn-go"),disableSelectTag(e,"btn-clear"),manageHighlighted(e),customYmm.garage.forEach((e,t)=>{e.selected&&(customYmm.garage[t].selected=!1)}),setCookie("garage",JSON.stringify(customYmm.garage)),setupGarage(!1),(customYmm.isInSearchPage||customYmm.isInCategoryPage||customYmm.isInBrandPage)&&(setSelectedVehicleWithCategoryTitle(),clearContentsForCategoryPage(),displayYmmFormInSearchPage(),customYmm.searchQuery=""),t&&t(),displayBreadCrumb(),!1===customYmm.hideProductsUntilSelected&&fetchProductsAndRender()}function createYmmForm(e){return customYmm[""+e]={},customYmm[""+e].years=customYmm.years,customYmm[""+e].makes=[],customYmm[""+e].models=[],customYmm[""+e].drive_type_arr=[],customYmm[""+e].fuel_type_arr=[],customYmm[""+e].num_doors_arr=[],customYmm[""+e].selections={year:!1,make:!1,model:!1,drive_type:"",fuel_type:"",num_doors:""},`
-
-            <div class="ymm-form-container" id= "${e}">
-            
-                <div class="ymm-form-select-items">
-                
-                    <div class="year ymm-form-select">
-                        <select data-type = "select-year" class="select-year ymm-select ymm-select-selected">
-                            <option>Year</option>
-                        </select>
-                    </div>
-        
-                    <div class="make ymm-form-select">
-                        <select data-type="select-make" class="select-make ymm-select" disabled>
-                            <option>Make</option>
-                        </select>
-                    </div>
-        
-                    <div class="model ymm-form-select">
-                        <select data-type = "select-model" class="select-model ymm-select" disabled>
-                            <option>Model</option>
-                        </select>
-                    </div>
-                    
-                    ${"ymm-add-to-garage-form-modal"==e?'<div class="optional-field-label-wrapper">Optional Fields </div>':""}
-                        
-                    <div class="drive_type ymm-form-select">
-                        <select data-type = "select-drive-type" class="select-drive-type ymm-select" disabled>
-                            <option>Drive Type</option>
-                        </select>
-                    </div>
-                    
-                        
-                    <div class="fuel_type ymm-form-select">
-                        <select data-type = "select-fuel-type" class="select-fuel-type ymm-select" disabled>
-                            <option>Fuel Type</option>
-                        </select>
-                    </div>
-                    
-                        
-                    <div class="num_doors ymm-form-select">
-                        <select data-type = "select-num-doors" class="select-num-doors ymm-select" disabled>
-                            <option>Num Doors</option>
-                        </select>
-                    </div>
-                
-                </div>
-                
-                <div class="ymm-button-holder-wrapper">
-                
-                    <div class="ymm-button-holder">
-                    
-                        <div class = "ymm-go-btn">
-                            <button class ="button button-primary btn-go" disabled>Shop Now</button>
-                        </div>
-                        
-                        <div class = "ymm-clear-btn">
-                            <button class ="button button-secondary btn-clear" disabled>Clear</button>
-                        </div>
-                        
-                    </div>
-                    
-                </div>
-
-            </div>
-        `}function setupYMMform(e,t,r,a=!1,s=!1){var t=document.querySelector("."+t),o=document.createElement("div");t.appendChild(o),o.innerHTML=createYmmForm(e),assignYmmFormChangeListeners(e,r,a,s),document.querySelector("#"+e).querySelector(".select-year").innerHTML=createOptionTag("Year")+customYmm[""+e].years.map(e=>createOptionTag(e)).join("")}async function fetchYmmOnlyDataAndRender(e){try{var t=await(await fetch(`${customYmm.ymmOnlyApi}?category=${customYmm.selectedCategory}&drive_type=${customYmm[e].selections.drive_type}&fuel_type=${customYmm[e].selections.fuel_type}&num_doors=${customYmm[e].selections.num_doors}&year=${customYmm[e].selections.year}&make=${customYmm[e].selections.make}&model=`+customYmm[e].selections.model)).json();return displayMakesAndModels(t,e),t}catch(e){console.error(e)}}function disableSelectTag(e,t){document.querySelector("#"+e).querySelector("."+t).disabled=!0,resetSelectTag(e,t)}function enableSelectTag(e,t){document.querySelector("#"+e).querySelector("."+t).disabled=!1}function hideSelectTag(e,t){document.querySelector("#"+e).querySelector("."+t).closest(".ymm-form-select").style.display="none"}function displaySelectTag(e,t){document.querySelector("#"+e).querySelector("."+t).closest(".ymm-form-select").style.display="block"}function createOptionTag(e,t=!1){let r=!1;return`
-            <option value = "${e}" ${(r=0!=t&&Object.values(customYmm[""+t].selections).includes(e)?!0:r)?"selected":""} >${e}</option>
-        `}function isInVehiclePage(){return window.location.href.includes("/vehicles/")}function returnYMMvaluesFromVehiclePage(){return document.querySelector(".page-description").innerText.split(":")[1].trim().split("|").map(e=>e.trim())}function displayMakesAndModels(t,r){if(customYmm[""+r].makes=[...new Set(t.makes)].sort(),customYmm[""+r].models=[...new Set(t.models)].sort(),customYmm[""+r].drive_type_arr=[...new Set(t.drive_type_arr)].sort().filter(e=>null!=e&&0<e.trim().length),customYmm[""+r].fuel_type_arr=[...new Set(t.fuel_type_arr)].sort().filter(e=>null!=e&&0<e.trim().length),customYmm[""+r].num_doors_arr=[...new Set(t.num_doors_arr)].sort().filter(e=>null!=e&&0<e.trim().length),customYmm[""+r].selections.year)for(var e=customYmm[""+r].selections.year,a=document.querySelector(`#${r} .select-year`),s=0;s<a.options.length;s++)if((o=a.options[s]).value===e){o.selected=!0;break}if(0<customYmm[""+r].makes.length&&0!=customYmm[""+r].selections.year&&(customYmm[""+r].makes=[...new Set(t.makes)].sort(),enableSelectTag(r,"select-make"),document.querySelector("#"+r).querySelector(".select-make").innerHTML=createOptionTag("Make")+customYmm[""+r].makes.map(e=>createOptionTag(e,r)).join(""),isInVehiclePage())){t=returnYMMvaluesFromVehiclePage();let e=!1;if(e=t[0],(e=3==t.length?t[1]:e)&&0==customYmm[""+r].selections.make)for(var o,a=document.querySelector(`#${r} .select-make`),s=0;s<a.options.length;s++)if((o=a.options[s]).value===e){o.selected=!0;var c=new Event("change");a.dispatchEvent(c);break}}0<customYmm[""+r].models.length&&0!=customYmm[""+r].selections.make&&(enableSelectTag(r,"select-model"),document.querySelector("#"+r).querySelector(".select-model").innerHTML=createOptionTag("Model")+customYmm[""+r].models.map(e=>createOptionTag(e,r)).join("")),0!=customYmm[""+r].selections.model&&(0<customYmm[""+r].drive_type_arr.length?(displaySelectTag(r,"select-drive-type"),enableSelectTag(r,"select-drive-type"),document.querySelector("#"+r).querySelector(".select-drive-type").innerHTML=createOptionTag("Drive Type")+customYmm[""+r].drive_type_arr.map(e=>createOptionTag(e,r)).join("")):hideSelectTag(r,"select-drive-type"),0<customYmm[""+r].fuel_type_arr.length?(displaySelectTag(r,"select-fuel-type"),enableSelectTag(r,"select-fuel-type"),document.querySelector("#"+r).querySelector(".select-fuel-type").innerHTML=createOptionTag("Fuel Type")+customYmm[""+r].fuel_type_arr.map(e=>createOptionTag(e,r)).join("")):hideSelectTag(r,"select-fuel-type"),0<customYmm[""+r].num_doors_arr.length?(displaySelectTag(r,"select-num-doors"),enableSelectTag(r,"select-num-doors"),document.querySelector("#"+r).querySelector(".select-num-doors").innerHTML=createOptionTag("Num Doors")+customYmm[""+r].num_doors_arr.map(e=>createOptionTag(e,r)).join("")):hideSelectTag(r,"select-num-doors"))}function setCookie(e,t){e=e+"="+encodeURIComponent(t),t=new Date;t.setDate(t.getDate()+30),e=e+("; expires="+t.toUTCString())+"; path=/",document.cookie=e}function getCookie(e){for(const a of document.cookie.split(";")){var[t,r]=a.trim().split("=");if(t===e)return decodeURIComponent(r)}return null}function loadCssFile(){var e=document.createElement("link");e.rel="stylesheet",e.type="text/css",e.href=customYmm.linkToCssFile,document.head.appendChild(e)}function showLoadingOverlay(){var e=document.createElement("div");e.innerHTML=`
-    <div class="loadingOverlay loadingOverlay2" style = "display:block;background-color: rgba(0, 0, 0, 0.03)">
-        <div class = "loadingIcon loadingText">
-            <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-            </svg>
-        </div>
-    </div>
-    `,document.body.appendChild(e.firstElementChild)}function hideLoadingOverlay(){var e=document.querySelector(".loadingOverlay2");e&&e.parentNode.removeChild(e)}function hideOverlay(){document.querySelector(".modal-wrapper").style.display="none",document.querySelector(".ymm-modal").style.display="none",document.body.classList.remove("my-grage-active"),document.querySelector("#cb-garage-btn")&&(document.querySelector("#cb-garage-btn").checked=!1)}function displayOverlay(){document.querySelector(".modal-wrapper").style.display="block",document.body.classList.add("my-grage-active"),document.querySelector(".ymm-modal").style.display="block"}function returnGarage(){return`
+        `;var r=document.querySelector(customYmm.homePageWrapper);r&&r.insertBefore(e,r.firstChild)}function saveOrGoForHomePage(e){pushToGarage(e);var e=window.location.href,e=new URL(e),t=e.protocol,e=e.hostname,[t,e,r,a]=(window.location.href=t+"//"+e+"/search/",returnSelections("custom-ymm-form-for-home-page"));let s=[t,e,r,a];(s=s.filter(e=>!1!==e&&""!==e).map(e=>e.replaceAll(" ","_"))).length&&s.join(">")}const decideWhatHappensAfterFormChangeInHomePage=async e=>{var[t,r,a,,]=returnSelections(e);(t&&r&&a?(removeHighlighted(e),saveOrGoForHomePage):(await fetchYmmOnlyDataAndRender(e),manageHighlighted))(e)};async function setupForHomePage(){createWrappersForHomePage(),setupYMMform("custom-ymm-form-for-home-page","custom-ymm-form-for-home-page",decideWhatHappensAfterFormChangeInHomePage,saveOrGoForHomePage);var e="custom-ymm-form-for-home-page",t=(hideSelectTag(e,"select-sub-model"),customYmm.garage.filter(e=>e.selected));t.length&&(selectedVehicle=t[0],customYmm[e].selections.year=selectedVehicle.year,customYmm[e].selections.make=selectedVehicle.make,customYmm[e].selections.model=selectedVehicle.model,await fetchYmmOnlyDataAndRender(e),enableSelectTag(e,"btn-go"),enableSelectTag(e,"btn-clear")),hideSelectTag(e,"select-sub-model")}function setupForCategoryPage(){setupForSearchPage(isCategoryPage=!0)}function setupForBrandPage(){setupForSearchPage()}async function loadSettingsFile(){customYmm.settingsURL="https://auto.searchalytics.com/flextread/dashboard/send_settings.php?requestedFile=settings.json";var t=await(await fetch(customYmm.settingsURL)).json(),t=(customYmm.settings={showCategoryImages:!0,hideProductsUntilSelected:!1,showBrandInProductCards:!0,showReviewsInProductCards:!0,showButtonsInProductCards:!1,productsPerRow:"3",productCardImageAspectRatio:["4:3"],headerVehicleIcon:["jeep"],years:["2024","2023","2022","2021","2020","2019","2018","2017","2016","2015","2014","2013","2012","2011","2010","2009","2008","2007","2006","2005","2004","2003","2002","2001","2000","1999","1998","1997","1996","1995","1994","1993","1992","1991","1990","1989","1988","1987","1986","1985","1984","1983","1982","1981","1980","1979","1978","1977","1976","1975","1974","1973","1972","1971","1970","1969","1968","1967","1966","1965","1963","1962","1961","1960","1959","1958","1957","1955","1953","1952"]},t.years.map(e=>parseInt(e))),r=(t.sort((e,t)=>e-t),t[0]),a=[];for(let e=t[t.length-1];e>=r;e--)a.push(e);customYmm.years=a,console.log(customYmm.settings)}async function initialize(){loadCssFile(),await loadSettingsFile(),decideWhichPageIsIt(),setupAddToGarageYMMform(),setupHeader(),customYmm.isInProductPage?setupForProductPage():customYmm.isInHomePage?setupForHomePage():customYmm.isInCategoryPage?setupForCategoryPage():customYmm.isInSearchPage?setupForSearchPage():customYmm.isInBrandPage&&setupForBrandPage()}function returnGarage(){return`
 		<svg width="32" height="22" viewBox="0 0 32 22" fill="none" xmlns="http://www.w3.org/2000/svg">
             <g clip-path="url(#clip0_119_373)">
             <path d="M31.453 20.875V0.535H0.547V20.875H1.5V1.338H30.5V20.875H31.457M32 21.41H29.949V1.873H2.051V21.41H0V0H32V21.41Z" fill="white"></path>
@@ -653,13 +781,7 @@ async function loadSettingsFile(){customYmm.settingsURL="https://auto.searchalyt
             </clipPath>
             </defs>
         </svg>
-	`}function returnCloseIcon(){return`
-            <svg xmlns="http://www.w3.org/2000/svg" class="icon-tabler icon-tabler-x" width="28" height="28" viewBox="0 0 24 24" stroke-width="1" stroke="#000000" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-              <path d="M18 6l-12 12"></path>
-              <path d="M6 6l12 12"></path>
-            </svg>    
-        `}function returnCar(){return`
+	`}function returnCar(){return`
         <svg width="115" height="44" viewBox="0 0 115 44" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path fill-rule="evenodd" clip-rule="evenodd" d="M7.12065 10.137C3.94927 10.3165 1.10699 11.0645 0 14.5949H0.0897561V27.9985C1.10699 31.4391 3.53041 33.2343 6.94114 33.9822C7.97723 34.2067 8.99339 34.5109 10.0069 34.8143C10.7493 35.0366 11.4904 35.2585 12.2367 35.4482C12.9249 35.5978 13.2839 35.9868 13.5532 36.6151C15.2585 40.5643 18.3402 42.8082 22.5886 43.1673C26.508 43.4964 29.7392 41.9107 32.0728 38.7094C32.5515 38.0512 33.0302 37.8417 33.8081 37.8417C50.2634 37.8717 66.6888 37.8717 83.1141 37.8417C83.922 37.8118 84.4306 38.0212 84.9392 38.7393C87.602 42.4791 92.1496 44.0349 96.5477 42.8082C100.736 41.6414 103.938 37.752 104.297 33.4437C104.745 27.9386 100.826 22.8226 95.5304 21.9549C89.786 20.9975 84.4306 24.5279 83.2039 30.1526C83.0037 31.0334 82.9643 31.9543 82.9242 32.8885V32.8886C82.9044 33.3507 82.8845 33.8161 82.8449 34.2814H33.9577C34.3167 31.0801 33.6885 28.2079 31.654 25.7247C29.6195 23.2713 26.9867 21.9549 23.7854 21.8053C21.3021 21.6856 19.0582 22.4037 17.0537 23.8697C14.3311 25.8743 12.9548 28.6567 12.6257 32.0076C11.8769 31.7951 11.1383 31.5894 10.4077 31.386L10.4075 31.3859C8.97809 30.9879 7.57908 30.5983 6.19317 30.1826C4.69724 29.7338 3.65008 28.6866 3.53041 27.1608C3.42684 25.8973 3.45233 24.6338 3.47783 23.3703C3.48916 22.8087 3.50049 22.2472 3.50049 21.6856C3.85228 21.6168 4.24709 21.6144 4.64092 21.6121C5.78782 21.6052 6.92652 21.5984 6.97106 19.9504C7.01573 18.1634 5.82639 18.1442 4.62311 18.1246C4.21466 18.118 3.80459 18.1114 3.44065 18.0356C3.44065 17.8051 3.43729 17.5746 3.43395 17.3452C3.42732 16.8898 3.42075 16.4388 3.44065 16.0011C3.50049 14.7744 4.03902 14.176 5.26569 13.9666C6.19973 13.7968 7.16055 13.6805 8.09748 13.5671L8.25756 13.5478C11.8777 13.1289 15.5278 12.6801 18.9385 11.244C19.2255 11.1223 19.52 10.9652 19.8148 10.8079C20.5342 10.4241 21.2551 10.0396 21.8706 10.1669C22.518 10.2964 23.0564 10.9551 23.5869 11.6042C23.7919 11.8549 23.9958 12.1043 24.2042 12.3211C25.8797 14.1162 27.8244 15.4925 30.2777 15.8814C31.6978 16.1056 33.1385 16.1224 34.5655 16.139H34.5655L34.5661 16.139C34.8526 16.1423 35.1386 16.1457 35.4237 16.1507C36.8299 16.1507 37.5779 15.5224 37.5779 14.4154C37.5779 13.3084 36.8299 12.6801 35.4237 12.6801H31.5941C31.7569 11.9428 31.9258 11.2239 32.092 10.5166L32.0924 10.5149L32.0925 10.5146C32.4455 9.01239 32.7862 7.5621 33.0302 6.098C33.2397 4.78157 33.868 4.27296 35.1545 4.03361C38.6133 3.39396 42.1096 3.46715 45.5989 3.5402C46.5162 3.5594 47.4331 3.5786 48.3486 3.58483C48.3956 3.58483 48.4425 3.6401 48.475 3.67835C48.4839 3.68885 48.4918 3.69806 48.4982 3.7045V12.6801H47.5109C47.0533 12.6801 46.5925 12.6768 46.1305 12.6735H46.1303H46.1302H46.1302H46.1301C45.2027 12.6668 44.2708 12.6601 43.3522 12.6801C42.1854 12.71 41.3776 13.458 41.4075 14.4154C41.4374 15.3429 42.1854 16.031 43.2924 16.1208C43.5505 16.1406 43.7955 16.1341 44.0448 16.1275C44.1711 16.1241 44.2985 16.1208 44.4293 16.1208C48.1368 16.1208 51.8477 16.1241 55.5608 16.1274H55.561H55.5612C62.9944 16.1341 70.4364 16.1407 77.8784 16.1208C83.6527 16.0908 89.3971 16.2105 95.1115 17.0782C99.5395 17.7364 103.938 18.6639 108.066 20.459C108.5 20.6417 108.899 20.8941 109.303 21.1497C109.429 21.229 109.554 21.3086 109.682 21.3865C109.209 21.5377 108.784 21.5814 108.377 21.6233C108.14 21.6477 107.909 21.6715 107.677 21.7156C106.391 21.9549 105.733 23.3312 106.54 24.2586C106.929 24.7074 107.707 24.9767 108.366 25.0665C109.096 25.1499 109.841 25.1315 110.6 25.1127C110.93 25.1046 111.262 25.0964 111.597 25.0964C111.597 25.7995 111.602 26.4876 111.607 27.1649V27.1652C111.619 28.8222 111.631 30.4149 111.567 32.0076C111.507 33.4437 110.968 33.9822 109.682 34.2515C108.425 34.5208 107.827 35.2986 108.066 36.3458C108.276 37.3032 109.233 37.8118 110.37 37.6323C113.063 37.1835 114.918 34.9995 114.978 32.0973C115.007 29.9133 115.007 27.7591 114.978 25.5751C114.918 21.8053 113.153 19.0827 109.772 17.4671C108.515 16.8687 107.169 16.3601 105.822 15.9412C98.7616 13.6973 91.4914 12.9793 84.1613 12.6203C83.5031 12.5904 82.8748 12.4108 82.3063 12.0518L82.3052 12.0511C78.1768 9.44843 74.0484 6.84573 69.92 4.1832C65.5519 1.37084 60.7649 0.0244997 55.5889 0.0244997C54.0721 0.0244997 52.5552 0.0164216 51.0383 0.00834359C47.4989 -0.0105052 43.9595 -0.029354 40.4202 0.0544184C38.1164 0.114256 35.8127 0.443361 33.5389 0.892142C29.9931 1.57931 26.826 3.3271 23.713 5.0451L23.7125 5.04536L23.7125 5.04538C23.4373 5.19728 23.1624 5.34894 22.8878 5.49962C17.9512 8.1923 12.7454 9.80792 7.12065 10.137ZM76.2927 12.2612C76.2628 12.4408 76.2628 12.4408 76.2029 12.6203H52.0286V3.55491C56.3369 3.34548 60.6751 3.28564 64.5346 5.32011C67.3256 6.76727 70.0023 8.41443 72.6831 10.0642L72.6833 10.0643L72.6836 10.0645L72.6837 10.0645C73.8823 10.8021 75.0818 11.5403 76.2927 12.2612ZM85.9564 32.4863C85.9564 28.4473 89.1278 25.216 93.1668 25.216C97.2657 25.1861 100.557 28.4772 100.497 32.5162C100.467 36.4954 97.1759 39.7565 93.1968 39.7565C89.1876 39.7565 85.9564 36.4954 85.9564 32.4863ZM15.9167 32.4265C15.9467 28.3874 19.2676 25.1562 23.3366 25.216C27.226 25.2759 30.4273 28.4772 30.4572 32.3965C30.5171 36.4356 27.2859 39.7266 23.2468 39.7565C19.2078 39.7864 15.8868 36.4356 15.9167 32.4265ZM27.4689 7.06593C28.0864 6.75533 28.7526 6.42023 29.4699 6.06808C29.0863 7.82172 28.7278 9.37461 28.3254 11.1174L28.2133 11.603L27.8083 11.1193L27.8065 11.1171C26.8991 10.0334 26.0938 9.07156 25.3112 8.13247C25.9525 7.8287 26.6699 7.46782 27.4689 7.06593ZM40.2706 30.6015H58.162H76.0533C77.9083 30.6015 78.8059 30.0031 78.7759 28.8362C78.746 27.6993 77.8784 27.1309 76.1132 27.1309H40.3304C39.9115 27.1309 39.4927 27.1608 39.1037 27.2206C38.2361 27.3702 37.6976 27.9686 37.6976 28.8362C37.6676 29.7637 38.266 30.3621 39.1636 30.5416C39.4515 30.6136 39.7587 30.6086 40.0542 30.6038C40.1272 30.6026 40.1995 30.6015 40.2706 30.6015ZM96.1288 33.2642C96.2485 33.713 96.1587 34.1618 95.8894 34.5507C95.7099 34.82 95.5304 35.0593 95.2611 35.1491C94.7226 35.3286 93.855 35.2987 93.4361 34.9696C92.4189 34.1917 91.5213 33.2044 90.6537 32.2171C90.0553 31.5589 90.0852 30.781 90.6836 30.0928C91.2221 29.4346 92.0598 29.1953 92.6881 29.7039C93.7003 30.5389 94.6054 31.5023 95.5121 32.4674L95.5123 32.4676C95.6776 32.6436 95.843 32.8196 96.0091 32.9949C96.0689 33.0847 96.0989 33.1445 96.1288 33.2642ZM21.0328 35.0893C21.4517 35.3585 21.9304 35.4782 22.4091 35.3585C22.5288 35.3286 22.6185 35.2987 22.6485 35.2389C22.8379 35.0544 23.0283 34.8707 23.2186 34.687C24.1702 33.7687 25.1217 32.8503 25.9694 31.8281C26.4781 31.2297 26.1489 30.4519 25.5506 29.9432C24.9223 29.4047 24.1444 29.315 23.5161 29.8535C22.4689 30.751 21.4517 31.7084 20.614 32.7855C20.3148 33.1745 20.2849 34.0122 20.4943 34.5208C20.5841 34.7602 20.7935 34.9397 21.0328 35.0893Z" fill="black"/>
         </svg>
@@ -679,169 +801,4 @@ async function loadSettingsFile(){customYmm.settingsURL="https://auto.searchalyt
         <svg width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M9.14371 0.56411C9.06183 0.395039 8.93398 0.252452 8.7748 0.152684C8.61563 0.0529151 8.43157 0 8.24371 0C8.05586 0 7.8718 0.0529151 7.71262 0.152684C7.55345 0.252452 7.4256 0.395039 7.34371 0.56411L5.33471 4.70211L0.852714 5.36111C0.669072 5.38846 0.496671 5.46639 0.354817 5.58618C0.212963 5.70597 0.107258 5.86288 0.0495424 6.03935C-0.00817295 6.21582 -0.0156195 6.40487 0.0280351 6.58533C0.0716897 6.76579 0.164723 6.93053 0.296714 7.06111L3.55271 10.2831L2.78371 14.8361C2.75202 15.0208 2.77285 15.2107 2.84383 15.3841C2.91481 15.5575 3.03308 15.7075 3.18517 15.8169C3.33726 15.9264 3.51705 15.9909 3.70403 16.0031C3.89101 16.0154 4.07766 15.9748 4.24271 15.8861L8.25171 13.7461L12.2607 15.8861C12.4258 15.9748 12.6124 16.0154 12.7994 16.0031C12.9864 15.9909 13.1662 15.9264 13.3183 15.8169C13.4703 15.7075 13.5886 15.5575 13.6596 15.3841C13.7306 15.2107 13.7514 15.0208 13.7197 14.8361L12.9477 10.2831L16.2037 7.06111C16.3357 6.93053 16.4287 6.76579 16.4724 6.58533C16.516 6.40487 16.5086 6.21582 16.4509 6.03935C16.3932 5.86288 16.2875 5.70597 16.1456 5.58618C16.0038 5.46639 15.8314 5.38846 15.6477 5.36111L11.1527 4.70211L9.14371 0.56411Z" fill="#FFC404"/>
         </svg>
-    `}function returnArrowLeft(){return`
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="2.769" viewBox="0 0 18 2.769">
-            <path id="minus-solid" d="M34,225.385a1.383,1.383,0,0,1-1.385,1.385H17.385a1.385,1.385,0,1,1,0-2.769H32.615A1.383,1.383,0,0,1,34,225.385Z" transform="translate(-16 -224)" fill="#050505"/>
-        </svg>
-    `}function returnArrowDown(){return`
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/></svg>
-    `}function returnPreviousIcon(){return`
-        <svg width="8" height="14" viewBox="0 0 8 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M6.99979 14C7.26498 13.9999 7.51929 13.8945 7.70679 13.707C7.89426 13.5195 7.99957 13.2652 7.99957 13C7.99957 12.7348 7.89426 12.4805 7.70679 12.293L2.41179 7L7.70679 1.707C7.89426 1.51947 7.99957 1.26516 7.99957 0.999996C7.99957 0.734832 7.89426 0.480524 7.70679 0.292996C7.51926 0.105525 7.26495 0.000209808 6.99979 0.000209808C6.73462 0.000209808 6.48031 0.105525 6.29279 0.292996L0.292787 6.293C0.105316 6.48052 0 6.73483 0 7C0 7.26516 0.105316 7.51947 0.292787 7.707L6.29279 13.707C6.38539 13.8002 6.49557 13.874 6.61693 13.9243C6.73829 13.9746 6.86842 14.0004 6.99979 14Z" fill="white"/>
-        </svg>
-    `}function returnNextIcon(){return`
-        <svg width="8" height="14" viewBox="0 0 8 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0.999847 13.9998C0.734653 13.9997 0.48034 13.8943 0.292847 13.7068C0.105376 13.5193 6.10352e-05 13.265 6.10352e-05 12.9998C6.10352e-05 12.7346 0.105376 12.4803 0.292847 12.2928L5.58785 6.99979L0.292847 1.70679C0.105376 1.51926 6.10352e-05 1.26495 6.10352e-05 0.999786C6.10352e-05 0.734622 0.105376 0.480314 0.292847 0.292787C0.480375 0.105316 0.734683 0 0.999847 0C1.26501 0 1.51932 0.105316 1.70685 0.292787L7.70685 6.29279C7.89432 6.48031 7.99963 6.73462 7.99963 6.99979C7.99963 7.26495 7.89432 7.51926 7.70685 7.70679L1.70685 13.7068C1.61424 13.8 1.50407 13.8738 1.38271 13.9241C1.26135 13.9744 1.13122 14.0001 0.999847 13.9998Z" fill="white"/>
-        </svg>
-    `}function setupHeader(){setupGarage(),setupQuickSearch()}function handleSubmit(){var e=customYmm.searchQuery;customYmm.isInSearchPage?0<e.trim().length&&(customYmm.loadMore=!0,customYmm.currentPage=1,fetchProductsAndRender()):0<e.trim().length&&(window.location.href=customYmm.siteURL+"/search/?sq="+e)}function setupQuickSearch(){document.querySelector(customYmm.quickSearchWrapper)&&(document.querySelector(customYmm.quickSearchWrapper).innerHTML=`
-            <div class="search-modal__form">
-            
-                <form class="form" id = "ymm-search-query-form" onsubmit="return false">
-                    <fieldset class="form-fieldset">
-                        <div class="form-field">
-                            <input class="form-input" data-search-quick="" name="nav-quick-search" id="nav-quick-search"  placeholder="Search..." autocomplete="off">
-                             <button type="submit" class="button button--{{#if theme_settings.halo_homepage_layout_4}}tertiary{{else}}primary{{/if}}" aria-label="{{lang 'search.quick_search.input_label'}}">
-                               
-                                
-                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <g clip-path="url(#clip0_2_20)">
-                                    <path d="M17.587 15.597L13.379 11.389C14.3839 9.89596 14.8027 8.08463 14.555 6.30201C14.3282 4.7195 13.5918 3.25404 12.4573 2.12767C11.3228 1.00131 9.8521 0.275422 8.26801 0.0600078C7.15564 -0.0858156 6.02464 0.0260672 4.9624 0.38701C3.90016 0.747953 2.93513 1.34829 2.14189 2.14163C1.34864 2.93497 0.748422 3.90008 0.387609 4.96236C0.0267949 6.02464 -0.0849502 7.15566 0.0610087 8.26801C0.275707 9.85209 1.00092 11.323 2.12676 12.4579C3.2526 13.5927 4.71769 14.3297 6.30001 14.557C8.08374 14.8052 9.89633 14.3861 11.39 13.38L15.6 17.588C15.8665 17.8393 16.2204 17.9768 16.5866 17.9712C16.9529 17.9657 17.3025 17.8175 17.5612 17.5583C17.8199 17.299 17.9674 16.9491 17.9722 16.5829C17.977 16.2166 17.8388 15.863 17.587 15.597ZM2.78101 7.31201C2.78101 6.11853 3.25511 4.97394 4.09903 4.13003C4.94294 3.28611 6.08753 2.81201 7.28101 2.81201C8.47448 2.81201 9.61908 3.28611 10.463 4.13003C11.3069 4.97394 11.781 6.11853 11.781 7.31201C11.781 8.50548 11.3069 9.65007 10.463 10.494C9.61908 11.3379 8.47448 11.812 7.28101 11.812C6.08753 11.812 4.94294 11.3379 4.09903 10.494C3.25511 9.65007 2.78101 8.50548 2.78101 7.31201Z" fill="#A8A8A8"/>
-                                    </g>
-                                    <defs>
-                                    <clipPath id="clip0_2_20">
-                                    <rect width="17.998" height="18" fill="white"/>
-                                    </clipPath>
-                                    </defs>
-                                </svg>
-    
-                            </button>
-                        </div>
-                    </fieldset>
-                </form>
-            
-            </div>
-
-        `,document.getElementById("ymm-search-query-form").addEventListener("submit",handleSubmit),document.getElementById("nav-quick-search").addEventListener("input",e=>{customYmm.searchQuery=e.target.value.trim()}))}function hideGarage(){document.querySelector("#garage-wrapper-wrapper").style.display="none"}function displayGarage(){document.querySelector("#garage-wrapper-wrapper").style.display="block"}function pushToGarage(e){var t=customYmm[""+e].selections.year,r=customYmm[""+e].selections.make,a=customYmm[""+e].selections.model,s=customYmm[""+e].selections.drive_type,o=customYmm[""+e].selections.fuel_type,c=customYmm[""+e].selections.num_doors;if(customYmm.garage.length){for(var m=0;m<customYmm.garage.length;m++)(vehicle=customYmm.garage[m]).selected&&(customYmm.garage[m].selected=!1);for(m=0;m<customYmm.garage.length;m++)if((vehicle=customYmm.garage[m]).selected&&(customYmm.garage[m].selected=!1),vehicle.year===t&&vehicle.make===r&&vehicle.model===a)return vehicle.drive_type=s,vehicle.fuel_type=o,vehicle.num_doors=c,vehicle.selected=!0,void setCookie("garage",JSON.stringify(customYmm.garage))}customYmm.garage.push({selected:!0,id:customYmm.garage.length?customYmm.garage[customYmm.garage.length-1].id+1:1,year:t,make:r,model:a,drive_type:s,fuel_type:o,num_doors:c}),setCookie("garage",JSON.stringify(customYmm.garage))}function decideWhereToGoWhenGarageItemClicked(r){var e,t="search-page-ymm-form-container";customYmm.garage.forEach((e,t)=>{e.selected&&(customYmm.garage[t].selected=!1)}),customYmm.garage.forEach((e,t)=>{e.id==r&&(customYmm.garage[t].selected=!0)}),setCookie("garage",JSON.stringify(customYmm.garage)),customYmm.isInSearchPage||customYmm.isInCategoryPage?(setupGarage(!1),e=customYmm.garage.filter(e=>e.id==r)[0],customYmm[t].selections.year=e.year,customYmm[t].selections.make=e.make,customYmm[t].selections.model=e.model,fetchProductsAndRender()):window.location.href=customYmm.siteURL+"/search/"}function fillGarageWithVehicles(){return 0<customYmm.garage.length?customYmm.garage.map(({selected:e=!1,id:t,year:r,make:a,model:s,drive_type:o,fuel_type:c,num_doors:m})=>`
-                <div class  =  "each-vehicle-in-garage ${e?"selected-vehicle-in-garage":""} d-flex align-items-center ymm-justify-content-between ymm-mt-2 cursor-pointer  ">
-                    
-                    <div class = "each-vehicle-in-garage__name" data-ymm-id="${t}">
-                        
-                        <span class="selected-ymm-each selected-ymm-vq-each"> 
-                            <span class="selected-ymm-ymm-each">
-                                ${r} ${a} ${s} 
-                            </span>
-                            <span class="selected-vq-each">
-                                ${o} ${c} ${m}
-                            </span>
-                        </span>
-                        
-                    </div>
-                    
-                    <div data-vehicle = "${t}" class = "remove-this-vehicle-from-garage ymm-icon-danger">
-                        ${customYmm.svgCross}
-                    </div>
-                
-                </div>
-            `).join(" "):"The garage is empty."}function displayGarageWrapper(){document.querySelector("#wrapperToGarageWrapperWrapper").style.display="block",document.querySelector("#garage-wrapper-wrapper").style.display="block"}function hideGarageWrapper(){document.querySelector("#wrapperToGarageWrapperWrapper").style.display="none",document.querySelector("#garage-wrapper-wrapper").style.display="none",document.querySelector("#cb-garage-btn")&&(document.querySelector("#cb-garage-btn").checked=!1)}function setPositionForGarageWrapper(){var e=document.getElementById("garage-wrapper-wrapper"),t=document.getElementById("garage-btn").getBoundingClientRect(),r=t.left;let a,s;s=r<=300?(a=t.left+20,"auto"):300<=r?(a="auto",window.innerWidth-t.right):(a=t.left,"auto"),e.style.top=t.bottom+10+"px",e.style.left=a+"px",e.style.right=s+"px"}function constructGarageAndDisplayIt(){var e=`
-
-            <div id = "garage-wrapper">
-
-                <div class = "clear-garage d-flex align-items-center ymm-justify-content-between cursor-pointer">
-                    <div><strong>Your Garage</strong></div>
-                    <div class ="ymm-text-right">
-                        <span class = "clear-garage-span" id="clear-garage-span">
-                            Clear Garage
-                        </span>
-                    </div>
-                </div>
-
-                <hr>
-
-                <div class = "garage-content">
-
-                    ${fillGarageWithVehicles()}
-                    
-                </div>
-                
-                <hr>
-                <div class = "add-vehicle-to-garage-button-wrapper ymm-text-center">
-                    <button class = "button button-primary" id = "add-vehicle-to-garage-button">
-                        Add Vehicle
-                    </button>
-                </div>
-
-            </div>
-        `,t=document.querySelector("#garage-wrapper-wrapper");t||((t=document.createElement("div")).id="garage-wrapper-wrapper",t.className="garage-wrapper-wrapper",document.querySelector("#newly-added-garage-btn").appendChild(t),(t=document.createElement("div")).className="modal-wrapper",t.id="wrapperToGarageWrapperWrapper",t.style.backgroundColor="rgba(255, 255, 255, 0)",t.addEventListener("click",()=>{hideGarageWrapper()}),document.body.appendChild(t)),document.querySelector("#garage-wrapper-wrapper").innerHTML=e,Array.from(document.querySelector("#garage-wrapper").querySelectorAll(".remove-this-vehicle-from-garage")).forEach(t=>{t.addEventListener("click",e=>{customYmm.garage=customYmm.garage.filter(e=>e.id!=t.getAttribute("data-vehicle")),setupGarage(displayGarageFlag=!0),setCookie("garage",JSON.stringify(customYmm.garage))})}),document.querySelector("#add-vehicle-to-garage-button").addEventListener("click",e=>{displayOverlay(),hideGarageWrapper()}),document.querySelector("#clear-garage-span").addEventListener("click",()=>{customYmm.garage=[],setCookie("garage",JSON.stringify(customYmm.garage)),setupGarage(!0)}),Array.from(document.querySelectorAll(".each-vehicle-in-garage__name")).forEach(t=>{t.addEventListener("click",e=>{decideWhereToGoWhenGarageItemClicked(t.getAttribute("data-ymm-id"))})})}function returnGarageText(){let e=!1;return(e=customYmm.garage.length&&(filteredVehicles=customYmm.garage.filter(e=>e.selected)).length?filteredVehicles[0]:e)?`
-                    <span class="selected-ymm selected-ymm-vq"> 
-                        <span class="selected-ymm-ymm">
-                            ${e.year} ${e.make} ${e.model}
-                        </span>
-                        <span class="selected-vq">
-                            ${e.drive_type} ${e.fuel_type} ${e.num_doors}
-                        </span>
-                    </span>
-                    <span class = "filter-pipe"> | </span>
-                    <span class = "change-vehicle"> Change </span> 
-                `:`
-                    <span classs="select-your-vehicle"> Select Your Vehicle </span>
-                
-                    <span class="icon-down-arrow" >
-                        <svg width="11" height="7" viewBox="0 0 11 7" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <g clip-path="url(#clip0_119_394)">
-                            <path d="M5.5 6.40002L0 2.43187e-05L11 2.43187e-05L5.5 6.40002Z" fill="white"/>
-                            </g>
-                            <defs>
-                            <clipPath id="clip0_119_394">
-                            <rect width="11" height="6.4" fill="white"/>
-                            </clipPath>
-                            </defs>
-                        </svg>
-                    </span>
-                
-                `}function returnGarageIcon(){return`
-            <span class="icon-grage">
-                ${(void 0===customYmm.settings.headerVehicleIcon?returnJeep:"garage"==customYmm.settings.headerVehicleIcon?returnGarage:"truck"==customYmm.settings.headerVehicleIcon?returnTruck:"car"==customYmm.settings.headerVehicleIcon?returnCar:returnJeep)()}
-            </span>
-        `}function returnGarageIconOrNothing(){return`
-            ${1!=customYmm.garage.filter(e=>e.selected).length?returnGarageIcon():""}
-        `}function setupGarage(e=!1){const t=customYmm.garage.length;var r,a;document.querySelector("#newly-added-garage-btn")&&document.querySelector("#newly-added-garage-btn").remove(),1024<window.innerWidth?document.querySelector(customYmm.garageButtonWrapper).innerHTML+=`
-                                            
-                <!-- need-to-change for every site -->
-                                            
-                <div id = "newly-added-garage-btn" class="navPages-item navPages-item-page">
-                    <input type="checkbox" id="cb-garage-btn" class="hidden">
-                    <label for="cb-garage-btn" class ='navPages-action' id="garage-btn">
-                        ${returnGarageIconOrNothing()}
-                        ${returnGarageText()}
-                    </label>
-                </div>
-    
-            `:(r=document.querySelector(".section-header-navigation"),(a=document.createElement("sticky-ymm-mobile")).innerHTML=`
-            <div id = "newly-added-garage-btn" class="navPages-item navPages-item-page">
-                <input type="checkbox" id="cb-garage-btn" class="hidden">
-                <label for="cb-garage-btn" class ='navPages-action' id="garage-btn">
-                    ${returnGarageIconOrNothing()}
-                    ${returnGarageText()}
-                </label>
-            </div>
-        `,r.parentNode.insertBefore(a,r.nextSibling)),document.querySelector("#cb-garage-btn").addEventListener("change",e=>{(e.target.checked?0<t?(constructGarageAndDisplayIt(),displayGarageWrapper):(document.body.classList.toggle("my-grage-active"),displayOverlay):hideGarageWrapper)()}),e&&constructGarageAndDisplayIt()}function goForAddToGarage(e){var[t,r,a,s,o,c]=returnSelections(e);pushToGarage(e),setupGarage(!1),hideOverlay(),customYmm.isInSearchPage||customYmm.isInCategoryPage||customYmm.isInBrandPage?(customYmm["search-page-ymm-form-container"].selections={year:t,make:r,model:a,drive_type:s,fuel_type:o,num_doors:c},fetchProductsAndRender()):window.location.href=customYmm.siteURL+"/search/"}const decideWhatHappensAfterFormChangeInAddToGarage=async e=>{try{var[t,r,a,s,o,c]=returnSelections(e),m=await fetchYmmOnlyDataAndRender(e);m.drive_type_arr=m.drive_type_arr.filter(e=>""!==e),m.fuel_type_arr=m.fuel_type_arr.filter(e=>""!==e),m.num_doors_arr=m.num_doors_arr.filter(e=>""!==e),manageHighlighted(e),t&&r&&a&&(enableSelectTag(e,"btn-go"),m.drive_type_arr.length||m.fuel_type_arr.length||m.num_doors_arr.length?document.querySelector(".optional-field-label-wrapper").style.display="block":document.querySelector(".optional-field-label-wrapper").style.display="none"),m.makes.length&&0==r||m.models.length&&0==a||m.drive_type_arr.length&&""==s||m.fuel_type_arr.length&&""==o||m.num_doors_arr.length&&""==c||(removeHighlighted(e),goForAddToGarage(e))}catch(e){console.log(e),alert("An error has occurred. Please report it to us.\n"+JSON.stringify(e))}};function setupAddToGarageYMMform(){var e=document.createElement("div"),t=(e.className="modal-wrapper",e.addEventListener("click",()=>{hideOverlay()}),document.createElement("div"));t.className="ymm-add-to-garage-form-modal",t.classList.add("ymm-modal"),t.innerHTML=`
-
-            <div class = "add-to-garage-form-wrapper">
-                
-                <div class = "add-to-garage-heading">
-                    <h3 class = "add-to-garage-heading__heading">SELECT YOUR TRUCK</h3>
-                    <div class = "close-icon" onclick = "hideOverlay()">${customYmm.svgCross}</div>
-                </div>
-                    
-                <div class = "ymm-add-to-garage-form-wrapper">
-                </div>
-                
-            </div>
-
-        `,document.body.appendChild(e),document.body.appendChild(t),hideOverlay(),setupYMMform("ymm-add-to-garage-form-modal","ymm-add-to-garage-form-wrapper",decideWhatHappensAfterFormChangeInAddToGarage,goForAddToGarage)}function returnSelectionsForBreadCrumb(){var[e,t,r,a,s,o]=returnSelections("search-page-ymm-form-container");return`
-            <h4>${e||""} ${t||""} ${r||""} ${a} ${s} ${o} </h4>
-        `}function displayBreadCrumb(){var e,t;customYmm.isInSearchPage?(e=[],(t=customYmm.searchQuery).length&&e.push('"'+t+'"'),document.querySelector("#ymm-breadcrumb").innerHTML=e.length?`
-                    <div class="category-title heading-custom"><h1>Search results for ${e.join(" for ")}</h1></div> 
-                `:'<div class="category-title heading-custom"><h1>Search Results</h1></div>'):(customYmm.isInCategoryPage||customYmm.isInBrandPage)&&(document.querySelector("#ymm-breadcrumb").innerHTML=`
-                 <div class="category-title heading-custom"><h1>${document.querySelectorAll(".bd-title")[document.querySelectorAll(".bd-title").length-1].innerText}</h1></div> 
-            `)}async function addToCart(e){e={id:e,quantity:1};try{var t=await fetch("/cart/add.js",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(e)});console.log(t),document.querySelector(".header__icon--cart").click()}catch(e){console.error(e)}}
+    `}document.addEventListener("DOMContentLoaded",()=>{initialize()});
