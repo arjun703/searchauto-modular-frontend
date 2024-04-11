@@ -34,7 +34,7 @@
     
     function displayPrices(compare_at_price, defaultPrice){
         
-        if(compare_at_price!== null && compare_at_price > 0)
+        if(compare_at_price !== null && compare_at_price > 0 && parseInt(compare_at_price) !== parseInt(defaultPrice) )
             return`
                 <span class="sale-price">$${formatPrice(defaultPrice)}</span>
                 <span class="compare-at-price ymm-product-price default-price">$${formatPrice(compare_at_price)}</span>
@@ -159,16 +159,21 @@ function displayAddToCartButton(productID) {
                                 ${displayBrand(product.brand)}
                                 
                                 <div class= "ymm-product-name">
-                                     <a href = "${customYmm["siteURL"]}/products/${product.url}/">
+                                    <a href = "${customYmm["siteURL"]}/products/${product.url}/">
                                         ${product.name}
                                     </a>
                                 </div>
                                 
 
                                 <div class="sale-and-default-price">
-                                    
-                                    ${displayPrices(product.compare_at_price,product.price)}
-            
+                                    <div class="price-on-product-item">
+                                        ${displayPrices(product.compare_at_price,product.price)}
+                                    </div>
+                                    <div class="cart-icon">
+                                        <a href = "${customYmm["siteURL"]}/products/${product.url}/">
+                                            <i class="flaticon-online-shopping-cart"></i>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                     
@@ -185,27 +190,33 @@ function displayAddToCartButton(productID) {
     }
 
     function renderProducts(products, append = false){
-        document.querySelector('.ymm-products').innerHTML = ''
         document.querySelector('.no-results-message-outer').innerHTML = ''
         document.querySelector('.search-results-count').innerHTML = ''
         if(customYmm['searchResultsCount'] > 0){
 
             // alert(customYmm.currentPage)
             document.querySelector('.search-results-count').innerHTML = generateProductRangeText()
-               
-            document.querySelector('.ymm-products').innerHTML = products.map(product => constructProductDiv(product)).join('')
             
+
+            if(isPagination){
+                document.querySelector('.ymm-products').innerHTML = ''
+                document.querySelector('.ymm-products').innerHTML = products.map(product => constructProductDiv(product)).join('')
+            }else{
+                document.querySelector('.ymm-products').innerHTML += products.map(product => constructProductDiv(product)).join('')
+            }
         }else{
 
-            document.querySelector('.no-results-message-outer').innerHTML = `
-                <div class="no-results-message">
-                    <p class="no-results-msg-inner">
-                        No any products exist for this filter combination.
-                        <br>
-                        <a href = "${customYmm["siteURL"]}/search/">Please Click Here</a> to find all the parts that fit your selection or <a href="#"> ${returnClearAllText()} </a> filters.
-                    </p>
-                </div>
-            `
+            if( customYmm.currentPage == 1){
+                document.querySelector('.no-results-message-outer').innerHTML = `
+                    <div class="no-results-message">
+                        <p class="no-results-msg-inner">
+                            No any products exist for this filter combination.
+                            <br>
+                            <a href = "${customYmm["siteURL"]}/search/">Please Click Here</a> to find all the parts that fit your selection or <a href="#"> ${returnClearAllText()} </a> filters.
+                        </p>
+                    </div>
+                `
+            }
         }
     }
 
@@ -316,9 +327,9 @@ function returnClearAllText(){
             !customYmm['isInCategoryPage'] && customYmm['selectedCategories'].length
         )    
     ){
-         return'<span class="remove-all" onclick="removeAllFilters()">Clear All</span>'
+        return'<span class="remove-all" onclick="removeAllFilters()">Start Over</span>'
     }else{
-        return '<span class="disabled remove-all">Clear All</span>'
+        return ''
     }
     
 }
@@ -336,18 +347,6 @@ function returnFiltersWrappers(){
                     <h2 class="h2">FILTER BY</h2>
                 </div>
                 <div class="ymm-all-filters">
-                
-                    <div class="ymm-categories ymm-filter-item">
-                        
-                    </div>
-    
-                    <div class = "ymm-brands ymm-filter-item">
-                        
-                    </div>
-    
-                    <div class="ymm-price ymm-filter-item">
-                        
-                    </div>
                 
                 </div>
                 
@@ -367,17 +366,7 @@ function returnFiltersWrappers(){
     `
 }
 
-function returnArrowLeft(){
-    return`
-<svg xmlns="http://www.w3.org/2000/svg" width="18" height="2.769" viewBox="0 0 18 2.769">
-  <path id="minus-solid" d="M34,225.385a1.383,1.383,0,0,1-1.385,1.385H17.385a1.385,1.385,0,1,1,0-2.769H32.615A1.383,1.383,0,0,1,34,225.385Z" transform="translate(-16 -224)" fill="#050505"/>
-</svg>     `
-}
 
-function returnArrowDown(){
-    return`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/></svg>   `
-}
 
 function hideOrShowCollapsibleContent(event){
     
@@ -434,107 +423,140 @@ function removeSelectedQuery(){
 
 const handleSortByChange = (e) => {
     customYmm['sortBy'] = e.target.value
-    fetchProductsAndRender()
+    fetchProductsAndRender(clearAfterLoad = true)
 }
 
+
+function clearProductDiv(){
+    document.querySelector('.ymm-products').innerHTML = ''
+}
 
 function fillupFiltersWrappers(){
     
     if(document.querySelector('.ymm-filters-selections')){
-            document.querySelector('.ymm-filters-selections').innerHTML = ''
 
-        if(customYmm['searchQuery'].trim().length){
-               document.querySelector('.ymm-filters-selections').innerHTML += `
-                <div class="filter-item-wrapper" onclick="removeSelectedQuery()">
-                    <span>
-                        <strong>Query:</strong> 
-                        <span class="query-name filter-name">${customYmm['searchQuery']}</span>
-                    </span>
-                    <span class='close-icon'>
-                        ${returnCloseIcon()}
-                    </span>
+        document.querySelector('.ymm-filters-selections').innerHTML = ''
+
+        document.querySelector('.ymm-all-filters').innerHTML = ''
+
+
+        if(returnClearAllText() !== ''){
+            document.querySelector('.ymm-filters-selections').innerHTML = `
+                <div class="ymm-filters-selections-inner">
+                    <div  class="all-filter-items-wrapper">
+                        ${
+                            customYmm['searchQuery'].trim().length
+                                ? `
+                                    <div class="filter-item-wrapper" onclick="removeSelectedQuery()">
+                                        <span>
+                                            <strong>Query:</strong> 
+                                            <span class="query-name filter-name">${customYmm['searchQuery']}</span>
+                                        </span>
+                                        <span class='close-icon'>
+                                            ${returnCloseIcon()}
+                                        </span>
+                                    </div>
+
+                                `
+                                : ''
+                        }
+
+                        ${
+                            customYmm['selectedCategories'].length 
+                            ? `
+                                ${
+                                    customYmm['selectedCategories']
+                                    .map(cat => {
+                                        return`
+                                            <div class="filter-item-wrapper category-name-wrapper ${customYmm['isInCategoryPage'] ? 'greyed-out': ''}" 
+                                                onclick="removeSelectedCategory('${cat}');fetchProductsAndRender()">
+                                                <span>
+                                                    <strong>Category:</strong> 
+                                                    <span class="category-name filter-name"> ${customYmm['selectedCategoryURLVsName'][cat] || cat.replaceAll('/', ' ').trim()}</span>
+                                                </span>
+                                                <span class="close-icon">${ !customYmm['isInCategoryPage'] ?  returnCloseIcon() : '' }</span>
+                                            </div>
+                                        `   
+                                    })
+                                    .join('')     
+                                }
+                            `
+                            : ''
+                        }
+
+                        ${
+                            customYmm['selectedBrands'].length
+                                ?   `
+                                    ${
+                                        customYmm['selectedBrands']
+                                        .map(brand => {
+                                            return`
+                                                <div class="brand-name-wrapper ${customYmm['isInBrandPage'] ? 'greyed-out': ''} filter-item-wrapper" onclick="removeSelectedBrand();fetchProductsAndRender()">
+                                                    <span>
+                                                        <strong>Brand:</strong> 
+                                                        <span class="brand-name filter-name"> ${brand}</span>
+                                                    </span>
+                                                    <span class="close-icon">
+                                                        ${!customYmm['isInBrandPage'] ?  returnCloseIcon() : ''}
+                                                    </span>
+                                                </div>
+                                            `   
+                                        })
+                                        .join('')
+                                    }
+
+                                `
+                                : ''
+                        }
+
+                        ${
+                            customYmm['selectedPrices'].length 
+                                ? `
+                                    ${
+                                        customYmm['selectedPrices']
+                                        .map(price => {
+                                            return`
+                                                <div class="price-name-wrapper filter-item-wrapper" onclick="removeSelectedPrice();fetchProductsAndRender()">
+                                                    <span>
+                                                        <strong>Price:</strong> 
+                                                        <span class="price-name filter-name"> ${customYmm["priceIdsAndLabels"][price] || price }</span>
+                                                    </span>
+                                                    <span class="close-icon"">
+                                                        ${returnCloseIcon()}
+                                                    </span>
+                                                </div>
+                                            `   
+                                        })
+                                        .join('')
+                                    }
+                                `
+                            : ''
+                        }
+                    </div>
+                    <div class="start-over-wrapper">
+                        ${returnClearAllText()}
+                    </div>
                 </div>
             `
-        }
-        
-        if( customYmm['selectedCategories'] ){
-            
-            document.querySelector('.ymm-filters-selections').innerHTML +=  customYmm['selectedCategories']
-                                            .map(cat => {
-                                                return`
-                                                    <div class="filter-item-wrapper category-name-wrapper ${customYmm['isInCategoryPage'] ? 'greyed-out': ''}" 
-                                                        onclick="removeSelectedCategory('${cat}');fetchProductsAndRender()">
-                                                        <span>
-                                                            <strong>Category:</strong> 
-                                                            <span class="category-name filter-name"> ${customYmm['selectedCategoryURLVsName'][cat] || cat.replaceAll('/', ' ').trim()}</span>
-                                                        </span>
-                                                        <span class="close-icon">${ !customYmm['isInCategoryPage'] ?  returnCloseIcon() : '' }</span>
-                                                    </div>
-                                                `   
-                                            })
-                                            .join('')
-                
-    
-            
-            
-        }
-                
-        if( customYmm['selectedBrands'].length ){
-
-         document.querySelector('.ymm-filters-selections').innerHTML += customYmm['selectedBrands']
-                                            .map(brand => {
-                                                return`
-                                                    <div class="brand-name-wrapper ${customYmm['isInBrandPage'] ? 'greyed-out': ''} filter-item-wrapper" onclick="removeSelectedBrand();fetchProductsAndRender()">
-                                                        <span>
-                                                            <strong>Brand:</strong> 
-                                                            <span class="brand-name filter-name"> ${brand}</span>
-                                                        </span>
-                                                        <span class="close-icon">
-                                                            ${!customYmm['isInBrandPage'] ?  returnCloseIcon() : ''}
-                                                        </span>
-                                                    </div>
-                                                `   
-                                            })
-                                            .join('')
-                
-
-        }
-        
-                        
-        if( customYmm['selectedPrices'].length ){
-   
-            document.querySelector('.ymm-filters-selections').innerHTML += customYmm['selectedPrices']
-                                            .map(price => {
-                                                return`
-                                                    <div class="price-name-wrapper filter-item-wrapper" onclick="removeSelectedPrice();fetchProductsAndRender()">
-                                                        <span>
-                                                            <strong>Price:</strong> 
-                                                            <span class="price-name filter-name"> ${customYmm["priceIdsAndLabels"][price] || price }</span>
-                                                        </span>
-                                                        <span class="close-icon"">
-                                                            ${returnCloseIcon()}
-                                                        </span>
-                                                    </div>
-                                                `   
-                                            })
-                                            .join('')
-            
-        }
-        
+        } 
     }
-    
-    
-    if(document.querySelector('.ymm-brands') && customYmm["brands"]){
+        
+
+    if(customYmm["brands"]){
         brandData = customYmm["brands"];
         
-        document.querySelector('.ymm-brands').innerHTML = `
-            <div class="collapsible-wrapper">
-                <div class="collapsible-title-icon" onclick="hideOrShowCollapsibleContent(event)">
-                    <h3>Brand</h3>
-                    <div class="collapsible-toggle-icon" >${returnArrowLeft()}</div>
-                </div>
-                <div class="collapsible-content">
-                    ${brandData.map(brand => createBrandItem(brand)).join(' ')}
+        if(!brandData.length) return
+
+        document.querySelector('.ymm-all-filters').innerHTML    += `
+            <div class="ymm-brands ymm-filter-item">
+                <div class="collapsible-wrapper">
+                    <div class="collapsible-title-icon" onclick="hideOrShowCollapsibleContent(event)">
+                        <h3>Brand</h3>
+                        <div class="collapsible-toggle-icon" >${returnArrowLeft()}</div>
+                    </div>
+                    <div class="collapsible-content">
+                        ${brandData.map(brand => createBrandItem(brand)).join(' ')}
+                    </div>
                 </div>
             </div>
         `
@@ -543,14 +565,14 @@ function fillupFiltersWrappers(){
 
     const categories = customYmm["categories"] ;
 
-    if(categories){
+    if(categories.length){
         displayCategories(categories)
+    }
+    if(customYmm['brands'].length){
         displayPriceRanges()
         assignListenerToTheCheckBoxes()
-    }else{
-        document.querySelector('.ymm-filters-selections').innerHTML = ''
     }
-    
+
     const sortOptions = [
         {
             value: "default",
@@ -577,6 +599,7 @@ function fillupFiltersWrappers(){
 
     document.querySelector('.sort-by').innerHTML = `
         <div class="sort-by-wrapper-inner">
+            <span class="sort-by-text">Sort By</div>
             <select class="sort-by-select select" onChange="handleSortByChange(event)">
                 ${
                     sortOptions.map(({value, label}) => {
@@ -629,7 +652,7 @@ function  clearContentsForCategoryPage(){
     // document.querySelector('.ymm-price').innerHTML = ''
     // document.querySelector('.ymm-products').innerHTML = ''
     // document.querySelector('.loading-indicator').innerHTML = ''
-    document.querySelector('.ymm-filters-products').style.display = "none"
+    // document.querySelector('.ymm-filters-products').style.display = "none"
     
 }
 
@@ -669,6 +692,7 @@ function  clearContentsForCategoryPage(){
     }
     
 function generatePagination(currentPage, resultsPerPage, totalResults) {
+
     console.log(currentPage, resultsPerPage, totalResults)
     const totalPages = Math.ceil(totalResults / resultsPerPage);
     const numLinksBeforeAfter = window.innerWidth < 768 ? 0 : 2;
@@ -774,6 +798,8 @@ function generateProductRangeText() {
     
     if(customYmm['searchResultsCount'] == 0){
         return ''
+    }else{
+        return customYmm['searchResultsCount'] + ' results'
     }    
     
     currentPage = customYmm['currentPage'], totalResults = customYmm['searchResultsCount'] , productsPerPage = 12
@@ -791,9 +817,30 @@ function generateProductRangeText() {
     return resultText;
 }
 
-       function fetchProductsAndRender(append = false){
+            const isPagination =false
+
+        function displayLoadMore(){
+            if(customYmm['searchResultsCount'] >= 12){
+                return `
+                    <div>
+                        <button  onclick="document.querySelector('.button-load-more').innerText='Loading';document.querySelector('.button-load-more').disabled=true ;fetchNextPage(); " class = "button button-load-more button-primary" >
+                            Load More
+                        </button>
+                    </div>
+                `
+            }else{
+                return`
+                    <div class="end-of-results">
+                        End of Results
+                    </div>
+                `
+            }
+        }
+
+    function fetchProductsAndRender(  clearAfterLoad  = false){
         
-        
+        // clear after load meaning whether or not to clear the product previously fetched
+
         var hideProductsUntilVehicleSelected = true;
         
         // hideProductsUntilVehicleSelected =  customYmm['settings'].hideProductsUnlessVehicleSelected
@@ -809,7 +856,11 @@ function generateProductRangeText() {
         .then(response => response.json())
 
         .then(data => {
-            console.log("helloosdfsdfhsf")
+
+            if(clearAfterLoad){
+                clearProductDiv()
+            }
+
             hideLoadingOverlay()
 
             // console.log('data', data);
@@ -829,7 +880,7 @@ function generateProductRangeText() {
             
             const products = data.products
 
-            if(!append) customYmm["products"] = {}
+           customYmm["products"] = {}
 
             products.forEach(product => {
 
@@ -839,9 +890,15 @@ function generateProductRangeText() {
             
             customYmm["allCounts"] = data.count
             
-            renderProducts(data.products, append)
+            renderProducts(data.products)
 
-            document.querySelector('.loading-indicator').innerHTML = generatePagination(customYmm.currentPage, 12, customYmm['searchResultsCount']);
+
+            if(isPagination){
+                document.querySelector('.loading-indicator').innerHTML = generatePagination(customYmm.currentPage, 12, customYmm['searchResultsCount']);
+            }else{
+                document.querySelector('.loading-indicator').innerHTML = displayLoadMore()
+            }
+
 
             if(data.products.length == customYmm.productsPerPage){
 
@@ -878,6 +935,7 @@ function generateProductRangeText() {
     }
 
 function scrollToTop() {
+    if(!isPagination) return 
     window.scrollTo({
         top: 0,
         behavior: 'smooth' // Add smooth scrolling behavior if supported
@@ -910,15 +968,16 @@ function scrollToTop() {
 
 
           
-        document.querySelector('.ymm-price').innerHTML = `
-        
-            <div class="collapsible-wrapper">
-                <div  class="collapsible-title-icon" onclick="hideOrShowCollapsibleContent(event)">
-                    <h3>Price</h3>
-                    <div class="collapsible-toggle-icon" >${returnArrowLeft()}</div>
-                </div>
-                <div class="collapsible-content">
-                    ${Object.keys(priceIdsAndLabels).filter(id=>customYmm["priceRanngesVsFrequency"][id] > 0 ).map(key => createPriceItem(key, priceIdsAndLabels[key]) ).join(' ')}
+        document.querySelector('.ymm-all-filters').innerHTML += `
+            <div class="ymm-price ymm-filter-item">
+                <div class="collapsible-wrapper">
+                    <div  class="collapsible-title-icon" onclick="hideOrShowCollapsibleContent(event)">
+                        <h3>Price</h3>
+                        <div class="collapsible-toggle-icon" >${returnArrowLeft()}</div>
+                    </div>
+                    <div class="collapsible-content">
+                        ${Object.keys(priceIdsAndLabels).filter(id=>customYmm["priceRanngesVsFrequency"][id] > 0 ).map(key => createPriceItem(key, priceIdsAndLabels[key]) ).join(' ')}
+                    </div>
                 </div>
             </div>
         `
@@ -1210,7 +1269,8 @@ console.log(queryParts)
 
             setURLparams()
 
-            fetchProductsAndRender()
+
+            fetchProductsAndRender(clearAfterLoad = true)
 
 
         }
@@ -1262,14 +1322,16 @@ console.log(queryParts)
 
             const hierarchicalData = categories;
 
-            document.querySelector('.ymm-categories').innerHTML = `
-                <div class="collapsible-wrapper">
-                    <div class="collapsible-title-icon" onclick="hideOrShowCollapsibleContent(event)" >
-                        <h3>Category</h3>
-                        <div class="collapsible-toggle-icon">${returnArrowLeft()}</div>
-                    </div>
-                    <div class="collapsible-content">
-                        <ul id="tree" class="tree"></ul>
+            document.querySelector('.ymm-all-filters').innerHTML += `
+                <div class="ymm-categories ymm-filter-item">
+                    <div class="collapsible-wrapper">
+                        <div class="collapsible-title-icon" onclick="hideOrShowCollapsibleContent(event)" >
+                            <h3>Category</h3>
+                            <div class="collapsible-toggle-icon">${returnArrowLeft()}</div>
+                        </div>
+                        <div class="collapsible-content">
+                            <ul id="tree" class="tree"></ul>
+                        </div>
                     </div>
                 </div>
             `
@@ -1481,13 +1543,13 @@ console.log(queryParts)
     customYmm["quickSearchWrapper"] = ".search-modal__content"
     customYmm["searchQuery"] = ""
     
-    customYmm["fitmentTableWrapper"] = "#tab-custom-tab-fitment-mobile"
+    customYmm["fitmentTableWrapper"] = ".fitment-content"
     customYmm["fitmentTabLinkWrapper"] = ".productView-bottom .tabs"
 
     customYmm['isInHomePageChecker'] = '#suspensionbroshomewrapper'
 
     customYmm['filtersWrapperMobile'] = '#filters-wrapper-mobile';
-    customYmm['filtersWrapperDesktop'] = '#filters-wrapper-desktop';
+    customYmm['filtersWrapperDesktop'] = '.filters-only-wrapper';
 
     customYmm['filtersWrapperMobileSidebarClass'] = "halo-sidebar halo-sidebar-left";
 
@@ -1889,11 +1951,11 @@ console.log(queryParts)
                     <div class="ymm-button-holder">
                     
                         <div class = "ymm-go-btn">
-                            <button class ="button button-primary btn-go" disabled>Shop Now</button>
+                            <button class ="button button-primary btn-go" disabled>Go</button>
                         </div>
                         
                         <div class = "ymm-clear-btn">
-                            <button class ="button button-secondary btn-clear" disabled>Clear</button>
+                            <button class ="button button-secondary btn-clear" disabled>${returnRefreshIcon()}</button>
                         </div>
                         
                     </div>
@@ -2494,7 +2556,10 @@ console.log(queryParts)
         }else if(bodyClasses.includes('template-collection')){
             if(window.location.href.includes('vendors')){
                 customYmm["isInBrandPage"] = true
-            }else{
+            } else if(window.location.href.includes('collections/all')){
+                customYmm['isInSearchPage'] = true
+            }
+            else{
                 customYmm["isInCategoryPage"] = true
             }
         }
@@ -2570,35 +2635,52 @@ console.log(queryParts)
         if(document.querySelector('#cb-garage-btn'))document.querySelector('#cb-garage-btn').checked = false
     }
 
+    function clearGarage(){
+        customYmm["garage"] = []
+        setCookie("garage", JSON.stringify(customYmm["garage"]))
+        setupGarage(true)
+    }
+
     function constructGarageAndDisplayIt(){
 
         let html = `
 
             <div id = "garage-wrapper">
 
-                <div class = "clear-garage d-flex align-items-center ymm-justify-content-between cursor-pointer">
-                    <div><strong>Your Garage</strong></div>
-                    <div class ="ymm-text-right">
-                        <span class = "clear-garage-span" id="clear-garage-span">
-                            Clear Garage
-                        </span>
-                    </div>
-                </div>
 
+                <div class='add-to-garagge-form-wrapper-outer'></div>
                 <hr>
 
-                <div class = "garage-content">
+                ${
+                    customYmm["garage"].length > 0 
+                        ? `
+                        <div class="non-empty-garage">
+                            <div class = "clear-garage d-flex align-items-center ymm-justify-content-between cursor-pointer">
+                                <div><strong>Your Garage</strong></div>
+                            </div>
 
-                    ${fillGarageWithVehicles()}
-                    
-                </div>
-                
-                <hr>
-                <div class = "add-vehicle-to-garage-button-wrapper ymm-text-center">
-                    <button class = "button button-primary" id = "add-vehicle-to-garage-button">
-                        Add Vehicle
-                    </button>
-                </div>
+                            <hr>
+
+                            <div class = "garage-content">
+
+                                ${fillGarageWithVehicles()}
+                                
+                            </div>
+                            
+                            <hr>
+                            <div class = "clear-garage-btn-wrapper add-vehicle-to-garage-button-wrapper ymm-text-center">
+                                <button onclick="clearGarage()" class = "button button-primary" >
+                                    Clear Garage
+                                </button>
+                            </div>
+                        </div>
+                    `
+                    : `
+                        <div>
+                            The garage is empty
+                        </div>
+                    `
+                }
 
             </div>
         `
@@ -2622,11 +2704,21 @@ console.log(queryParts)
 
             document.body.appendChild(wrapperToGarageWrapperWrapper)
 
+            const wrapperForModal = document.createElement('div')
+
+            wrapperForModal.className = "modal-wrapper"
+
+            wrapperForModal.addEventListener('click', () => {
+                hideOverlay()
+            })
+
         }
 
-        // setPositionForGarageWrapper()
+
 
         document.querySelector('#garage-wrapper-wrapper').innerHTML = html
+        
+        setupAddToGarageYMMform();
 
         // assign listeners to the clear and cross
 
@@ -2643,29 +2735,12 @@ console.log(queryParts)
 
         })
 
-        document.querySelector('#add-vehicle-to-garage-button').addEventListener('click', event => {
-        
-            displayOverlay()
-            hideGarageWrapper();
-        
-        })
-
-        document.querySelector('#clear-garage-span').addEventListener('click', () => {
-
-            customYmm["garage"] = []
-            setCookie("garage", JSON.stringify(customYmm["garage"]))
-            setupGarage(true)
-
-        })
 
 
         Array.from(document.querySelectorAll('.each-vehicle-in-garage__name')).forEach(ymm => {
-
             ymm.addEventListener('click', event => {
-
                 decideWhereToGoWhenGarageItemClicked(ymm.getAttribute("data-ymm-id"))
             
-
             })
 
         })
@@ -2800,20 +2875,20 @@ console.log(queryParts)
             if(event.target.checked){
 
 
-                if(noOfVehiclesInGarage > 0){
+                // if(noOfVehiclesInGarage > 0){
                     // display garage
                     
                     constructGarageAndDisplayIt()
                     displayGarageWrapper();
 
-                }else{
+                // }else{
 
-                    // display YMMM form for adding to the garage
-                    document.body.classList.toggle("my-grage-active")
-                    displayOverlay()
+                //     // display YMMM form for adding to the garage
+                //     document.body.classList.toggle("my-grage-active")
+                //     displayOverlay()
 
 
-                }
+                // }
 
             }else{
 
@@ -2913,7 +2988,7 @@ console.log(queryParts)
 
         document.querySelector('.modal-wrapper').style.display = "none";
         
-        document.querySelector('.ymm-modal').style.display = "none"
+        // document.querySelector('.ymm-modal').style.display = "none"
         
         document.body.classList.remove("my-grage-active")
         
@@ -2927,8 +3002,7 @@ console.log(queryParts)
         document.querySelector('.modal-wrapper').style.display = "block";
         document.body.classList.add("my-grage-active")
         // document.body.addEventListener('click' , () => hideOverlay());
-        
-        document.querySelector('.ymm-modal').style.display = "block"
+        // document.querySelector('.ymm-modal').style.display = "block"
 
     }
 
@@ -3054,51 +3128,27 @@ console.log(queryParts)
     function setupAddToGarageYMMform(){
 
         // wrapper for modal
-
-        const wrapperForModal = document.createElement('div')
-
-        wrapperForModal.className = "modal-wrapper"
-
-        wrapperForModal.addEventListener('click', () => {
-            hideOverlay()
-        })
-
-        // wrapperForModal.style.backgroundColor ="rgba(0, 0, 0, 0.5)"; /* Grey background with some transparency */
-
-        const ymmAddToGarageFormModal = document.createElement('div')
-
-        ymmAddToGarageFormModal.className = "ymm-add-to-garage-form-modal"
+        var ymmAddToGarageForm = document.querySelector('.add-to-garagge-form-wrapper-outer')
         
-        ymmAddToGarageFormModal.classList.add('ymm-modal')
-        
-        ymmAddToGarageFormModal.innerHTML = `
+        ymmAddToGarageForm.innerHTML = `
 
             <div class = "add-to-garage-form-wrapper">
-                
                 <div class = "add-to-garage-heading">
-                    <h3 class = "add-to-garage-heading__heading">SELECT YOUR TRUCK</h3>
-                    <div class = "close-icon" onclick = "hideOverlay()">${customYmm["svgCross"]}</div>
+                    <h3 class = "add-to-garage-heading__heading">Select your Vehicle</h3>
                 </div>
-                    
                 <div class = "ymm-add-to-garage-form-wrapper">
                 </div>
-                
             </div>
 
         `
-
-        document.body.appendChild(wrapperForModal)
-
-        document.body.appendChild(ymmAddToGarageFormModal)
-
-        hideOverlay()
-
         setupYMMform('ymm-add-to-garage-form-modal', 'ymm-add-to-garage-form-wrapper', decideWhatHappensAfterFormChangeInAddToGarage, goForAddToGarage)
 
     }
 
 
     function loadCssFile(){
+
+        return;
 
         // Create a new link element for the CSS file
         const linkElement = document.createElement("link");
@@ -3107,6 +3157,7 @@ console.log(queryParts)
         linkElement.rel = "stylesheet";
         linkElement.type = "text/css";
         linkElement.href = customYmm["linkToCssFile"]; // Replace with the actual path to your CSS file
+
 
         // Append the link element to the <head> section of the document
         document.head.appendChild(linkElement);
@@ -3168,84 +3219,62 @@ console.log(queryParts)
 
             <div class="ymm-container ${pageWidthFromThemeSettings}">
 
-                <div class="ymm-form-search-page">
-                    
-                    <h3 class="ymm-title d-flex align-items-center">
-                        Select Your Vehicle
-                    </h3>
 
-                    <div class="search-page-ymm-form-container">
-
-                    </div>
-
-                </div>
-                
-                
-                <div class = "ymm-change-or-clear ymm-mt-2 ymm-mb-2  ymm-justify-content-between" style="display:none">
-
-                    <div class = "ymm-change-or-clear__title">
-
-                    </div>
-
-                    <div class = "change-clear-btn-wrapper d-flex ymm-justify-content-around">
-                    
-                        <div class = "change-vehicle-wrapper">
-
-                            <button onclick = "displayYmmFormInSearchPage()" class = "search-page-change-vehicle-btn button button-primary btn-change">
-                                Change your Vehicle
-                            </button>
-
-                        </div>
-
-                        <div class = "clear-selection-wrapper">
-
-                            <button onclick = "clearYMMformAndDisplay()" class = "search-page-change-vehicle-btn button button-secondary btn-clear">
-                                Clear Selection
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                </div>
                 
                 <div id = "ymm-breadcrumb"></div>
                 
                 <div id="subcats-container" class="sub-category-item" style="display:none"></div>
 
-                <div class="filters-button-wrapper">
-                    <strong> Filter </strong>
-                    <button onclick="hideOrShowMobileFilter()" class = "button button-primary filters-button">Filter <svg class="cm_icon cm_filter-icon" viewBox="0 0 247.46 247.46"><path d="m246.74 13.984c-1.238-2.626-3.881-4.301-6.784-4.301h-232.46c-2.903 0-5.545 1.675-6.784 4.301-1.238 2.626-0.85 5.73 0.997 7.97l89.361 108.38v99.94c0 2.595 1.341 5.005 3.545 6.373 1.208 0.749 2.579 1.127 3.955 1.127 1.137 0 2.278-0.259 3.33-0.78l50.208-24.885c2.551-1.264 4.165-3.863 4.169-6.71l0.098-75.062 89.366-108.39c1.848-2.239 2.237-5.344 0.999-7.969zm-103.65 108.89c-1.105 1.34-1.711 3.023-1.713 4.761l-0.096 73.103-35.213 17.453v-90.546c0-1.741-0.605-3.428-1.713-4.771l-80.958-98.191h200.65l-80.958 98.191z"></path></svg>
-                </button>
-                </div>
-
-
-
                 <div class="ymm-filters-products ymm-mb-5 ymm-mt-5">
                     
+                    <div class="filters-wrapper-desktop" id="filters-wrapper-desktop">
+                        <div class="ymm-filters-selections-wrapper"><div class = "ymm-filters-selections"></div></div>
+                        <div class='filters-only-wrapper'></div>
+                    </div>
 
-                    <div class="filters-wrapper-desktop" id="filters-wrapper-desktop"></div>
+                    <div class="ymm-products-wrapper ymm-forms-and-products">
 
+                        <div class="ymm-form-search-page">
+                            <h3 class="ymm-title d-flex align-items-center"> Select Your Vehicle</h3>
+                            <div class="search-page-ymm-form-container"></div>
+                        </div>
+                        
+                        <div class = "ymm-change-or-clear ymm-mt-2 ymm-mb-2  ymm-justify-content-between" style="display:none">
 
-                    <div class="ymm-products-wrapper">
+                            <div class = "ymm-change-or-clear__title"></div>
+                            <div class = "change-clear-btn-wrapper d-flex ymm-justify-content-around">
+                                <div class = "change-vehicle-wrapper">
+
+                                    <button onclick = "displayYmmFormInSearchPage()" class = "search-page-change-vehicle-btn button button-primary btn-change">
+                                        Change your Vehicle
+                                    </button>
+
+                                </div>
+
+                                <div class = "clear-selection-wrapper">
+
+                                    <button onclick = "clearYMMformAndDisplay()" class = "search-page-change-vehicle-btn button button-secondary btn-clear">
+                                        Clear Selection
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
                         
                         <div class="search-results-count-sort-by">
                             <span class="search-results-count"></span>
-                            <div class="sort-by">
-                                
-                            </div>
+                            <div class="sort-by"></div>
                         </div>
                        
-                        <div class = "ymm-filters-selections">
-
-                        </div>
-                        <div class="no-results-message-outer"></div> 
-                        <div class="ymm-products grid-col-${columnsPerRowFromThemeSettings}">
-                            
                         
-                        </div>
 
-                        <div class = "loading-indicator">
+                        <div class="no-results-message-outer"></div> 
+                        <div class="ymm-products-grid-wrapper">
+                            <div class="ymm-products grid-col-${columnsPerRowFromThemeSettings}"></div>
+                            <div class = "loading-indicator"></div>
                         </div>
                     
                     </div>
@@ -3298,6 +3327,7 @@ console.log(queryParts)
 
     const decideWhatHappensAfterFormChangeInSearchPage = async (containerId) => {
         customYmm.currentPage = 1
+        clearProductDiv()
 
         let [selectedYear, selectedMake, selectedModel, selectedSubModel] = returnSelections(containerId)
         setURLparams()
@@ -3899,7 +3929,6 @@ for (let i = highestYear; i >= lowestYear; i--) {
 
         decideWhichPageIsIt()
 
-        setupAddToGarageYMMform()
 
         setupHeader()
 

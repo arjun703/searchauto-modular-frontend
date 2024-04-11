@@ -1,7 +1,37 @@
 const path = require('path');
 const glob = require('glob');
-const fs = require('fs');
 const uglifyjs = require('uglify-js');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const fs = require('fs');
+const ftp = require('ftp');
+
+const ftpConfig = {
+    host: 'ftp.cartmade.com',
+    port: 21, // Default FTP port
+    user: 'cartmade',
+    password: '6@wyxSLWC]M?'
+};
+
+
+
 
 var files = glob.sync('./../js/**/*.js');
 
@@ -23,7 +53,7 @@ function readFile(filePath) {
 
 async function concatenateFiles(filePaths) {
 
-  const filePath = `C:\\xampp\\htdocs\\myprojects\\search-auto\\search-auto-for-shopify\\local-dev\\flextread\\assets\\_ymm.js`;
+  const filePath = `./prod/bundled.js`;
   try {
     const fileContents = await Promise.all(filePaths.map(filePath => readFile(filePath)));
     const concatenatedContent = fileContents.join('\n');
@@ -32,11 +62,31 @@ async function concatenateFiles(filePaths) {
         console.error('Error writing file:', error);
       } else {
        console.log('Files concatenated successfully!');
-			// const originalCode = fs.readFileSync('./prod/bundled.js', 'utf8');
+			const originalCode = fs.readFileSync('./prod/bundled.js', 'utf8');
 
-			// const minifiedCode = uglifyjs.minify(originalCode, { compress: true, mangle: true });
+			const minifiedCode = uglifyjs.minify(originalCode, { compress: true, mangle: false });
 
 			// fs.writeFileSync(filePath, minifiedCode.code, 'utf8');
+
+
+      const fileToUpload = filePath; // Replace with the path to your file
+      const remoteFilePath = '/apps.cartmade.com/arjun/flextread/index.js'; // Replace with the path on the FTP server
+
+      const client = new ftp();
+
+      client.on('ready', () => {
+          client.put(fileToUpload, remoteFilePath, (err) => {
+              if (err) {
+                  console.error('Error uploading file:', err);
+              } else {
+                  console.log('File uploaded successfully');
+              }
+              client.end(); // Close the FTP connection
+          });
+      });
+
+      client.connect(ftpConfig);
+
 
       }
     });

@@ -1,3 +1,10 @@
+function returnRefreshIcon(){
+    return`
+        <svg xmlns="http://www.w3.org/2000/svg" class="cm_icon cm_icon-reset" height="16px" viewBox="0 0 16 16"><path d="M2.083,9H0.062H0v5l1.481-1.361C2.932,14.673,5.311,16,8,16c4.08,0,7.446-3.054,7.938-7h-2.021 c-0.476,2.838-2.944,5-5.917,5c-2.106,0-3.96-1.086-5.03-2.729L5.441,9H2.083z"></path><path d="M8,0C3.92,0,0.554,3.054,0.062,7h2.021C2.559,4.162,5.027,2,8,2c2.169,0,4.07,1.151,5.124,2.876 L11,7h2h0.917h2.021H16V2l-1.432,1.432C13.123,1.357,10.72,0,8,0z"></path></svg>
+    `
+}
+
+
 function returnGarage(){
 
 	return`
@@ -84,3 +91,14 @@ function returnColorfulStar(){
 }
 
 
+function returnArrowLeft(){
+    return`
+        <svg class="cm_icon cm_icon-angle left" height="20px" role="img" viewBox="39 30 565 565"><path d="M600,189q0-7-6-12l-28-28q-5-6-12-6t-13,6l-220,219-219-219q-5-6-13-6t-12,6l-28,28q-6,5-6,12t6,13l260,260q5,6,12,6t13-6l260-260q6-5,6-13z"></path></svg>   
+    `
+}
+
+function returnArrowDown(){
+    return`
+        <svg class="cm_icon cm_icon-angle down" height="20px" role="img" viewBox="39 30 565 565"><path d="M600,189q0-7-6-12l-28-28q-5-6-12-6t-13,6l-220,219-219-219q-5-6-13-6t-12,6l-28,28q-6,5-6,12t6,13l260,260q5,6,12,6t13-6l260-260q6-5,6-13z"></path></svg>
+    `
+}
