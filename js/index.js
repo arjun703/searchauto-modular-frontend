@@ -817,10 +817,11 @@ function generateProductRangeText() {
     return resultText;
 }
 
+
             const isPagination =false
 
         function displayLoadMore(){
-            if(customYmm['searchResultsCount'] >= 12){
+            if( customYmm["currentCounts"] >= 12){
                 return `
                     <div>
                         <button  onclick="document.querySelector('.button-load-more').innerText='Loading';document.querySelector('.button-load-more').disabled=true ;fetchNextPage(); " class = "button button-load-more button-primary" >
@@ -888,7 +889,7 @@ function generateProductRangeText() {
 
             })
             
-            customYmm["allCounts"] = data.count
+            customYmm["currentCounts"] = data.products.length
             
             renderProducts(data.products)
 
