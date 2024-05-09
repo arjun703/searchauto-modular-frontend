@@ -9,11 +9,10 @@
             }
             
         }else{
-            var  starsConcatenated = ''          
+            var starsConcatenated = ''          
             for(i =0; i< Math.ceil(reviewsRatingSum); i++){
                 starsConcatenated += returnColorfulStar()
             } 
-            
         }
         
         return starsConcatenated
@@ -224,17 +223,24 @@ function displayAddToCartButton(productID) {
 
         return`
             <div class="input-and-label">
-                <input ${customYmm['isInBrandPage'] ? 'disabled': ''} ${customYmm["selectedBrands"].includes(brand.name) ? 'checked' : '' } name = "cb-filter" data-filter-type = "brand" class = "cb-filter" type = "checkbox" data-brand-id = "${brand.id}" id = "cb-${brand.id}" data-term = "${brand.name}" >
+                <input 
+                    ${customYmm['isInBrandPage'] ? 'disabled': ''}
+                    ${customYmm["selectedBrands"].includes(brand.name) ? 'checked' : '' } 
+                    name = "cb-filter" 
+                    data-filter-type = "brand" 
+                    class = "cb-filter cb-filter-mandatory-filters" 
+                    type = "checkbox" 
+                    data-brand-id = "${brand.id}" 
+                    id = "cb-${brand.id}" 
+                    data-term = "${brand.name}" 
+                >
                 <label for  = "cb-${brand.id}" class="form-label--checkbox">
                     <span class="brand-name">${brand.name}</span>
                     <span class="brand-hits">${brand.hits}</span>
                 </label>
             </div>
         `
-
     }
-
-    
 
     function returnSelectionsForBreadCrumb(){
 
@@ -439,7 +445,6 @@ function fillupFiltersWrappers(){
 
         document.querySelector('.ymm-all-filters').innerHTML = ''
 
-
         if(returnClearAllText() !== ''){
             document.querySelector('.ymm-filters-selections').innerHTML = `
                 <div class="ymm-filters-selections-inner">
@@ -568,10 +573,14 @@ function fillupFiltersWrappers(){
     if(categories.length){
         displayCategories(categories)
     }
+
     if(customYmm['brands'].length){
         displayPriceRanges()
-        assignListenerToTheCheckBoxes()
+        // alert("assigned listerners to checkboxes")
     }
+
+    displayCustomFieldsAndAssignListeners()
+    assignListenerToTheCheckBoxes()
 
     const sortOptions = [
         {
@@ -614,6 +623,66 @@ function fillupFiltersWrappers(){
     
 }
 
+function displayCustomFieldsAndAssignListeners(){
+
+    Object.keys(customYmm['custom_fields']).forEach(key => {
+        if (typeof customYmm["customFieldsSelections"][key] === "undefined") {
+            customYmm["customFieldsSelections"][key] = [];
+        }
+    });
+
+    for (let key in customYmm['custom_fields']) {
+        const customFieldGroup = customYmm['custom_fields'][key]
+        document.querySelector('.ymm-all-filters').innerHTML += `
+            <div class="ymm-brands ymm-filter-item">
+                <div class="collapsible-wrapper">
+                    <div class="collapsible-title-icon" onclick="hideOrShowCollapsibleContent(event)">
+                        <h3>${key}</h3>
+                        <div class="collapsible-toggle-icon" >${returnArrowLeft()}</div>
+                    </div>
+                    <div class="collapsible-content">
+                        ${customFieldGroup.values
+                        .map(({value_key, value, product_count, custom_field_key}) => {
+                            return`
+                                <div class="input-and-label">
+                                    <input 
+                                        ${customYmm["customFieldsSelections"][key].includes(value_key) ? 'checked' : '' } 
+                                        name = "cb-filter" 
+                                        data-cf = "${custom_field_key}" 
+                                        class = "cb-filter cb-filter-custom-fields" 
+                                        type = "checkbox" 
+                                        id = "cb-${custom_field_key}-${value_key}" 
+                                        data-value-key = "${value_key}" 
+                                    >
+                                    <label for="cb-${custom_field_key}-${value_key}"  class="form-label--checkbox">
+                                        <span class="brand-name">${value}</span>
+                                        <span class="brand-hits">${product_count}</span>
+                                    </label>
+                                </div>                    
+                            `
+                        })
+                        .join(' ')}
+                    </div>
+                </div>
+            </div>
+       `    
+    }
+
+    Array.from(document.querySelectorAll('.cb-filter-custom-fields')).forEach(input => {
+        input.addEventListener('change', () => {
+            
+            customYmm['customFieldsSelections'][input.getAttribute('data-cf')] = []
+        
+            if(input.checked){
+                customYmm['customFieldsSelections'][input.getAttribute('data-cf')] = [input.getAttribute('data-value-key')];
+            }
+
+            fetchProductsAndRender(clearAfterLoad = true)
+        })
+    })
+      
+}
+
 window.onresize = function(){
     console.log("reeized")
     displayResponsiveFilters()
@@ -630,7 +699,6 @@ function displayResponsiveFilters(){
         document.querySelector(customYmm['filtersWrapperDesktop']).innerHTML = returnFiltersWrappers()
         document.querySelector(customYmm['filtersWrapperMobile']).innerHTML = ''
 
-
     }else{
     
         // mobile
@@ -641,7 +709,6 @@ function displayResponsiveFilters(){
     }
 
     fillupFiltersWrappers();
-
 
 }
 
@@ -851,8 +918,19 @@ function generateProductRangeText() {
         let [selectedYear, selectedMake, selectedModel, selectedSubModel] = returnSelections(ymmContainerId)
 
         showLoadingOverlay()
+        const customFilterSelections = [];
+        for (let key in customYmm['customFieldsSelections']) {
+            if(customYmm['customFieldsSelections'][key].length > 0){
+                customFilterSelections.push(`${key}:${customYmm['customFieldsSelections'][key][0]}`)
+            }    
+        }
 
-        fetch(`${customYmm["searchDataApi"]}?sortby=${customYmm['sortBy']}&sub_model=${selectedSubModel}&searchQuery=${customYmm["searchQuery"]}&year=${customYmm[`${ymmContainerId}`].selections.year}&make=${customYmm[`${ymmContainerId}`].selections.make}&model=${customYmm[`${ymmContainerId}`].selections.model}&category=${customYmm['selectedCategory']}&page=${customYmm.currentPage}&limit=${customYmm.productsPerPage}&brands=${customYmm["selectedBrands"].join(',')}&prices=${customYmm["selectedPrices"].join(',')}`)
+        var customFieldsSelection  = false
+        if(customFilterSelections.length){
+            customFieldsSelection = customFilterSelections.join('::')
+        }
+
+        fetch(`${customYmm["searchDataApi"]}?custom_fields=${customFieldsSelection}&sortby=${customYmm['sortBy']}&sub_model=${selectedSubModel}&searchQuery=${customYmm["searchQuery"]}&year=${customYmm[`${ymmContainerId}`].selections.year}&make=${customYmm[`${ymmContainerId}`].selections.make}&model=${customYmm[`${ymmContainerId}`].selections.model}&category=${customYmm['selectedCategory']}&page=${customYmm.currentPage}&limit=${customYmm.productsPerPage}&brands=${customYmm["selectedBrands"].join(',')}&prices=${customYmm["selectedPrices"].join(',')}`)
     
         .then(response => response.json())
 
@@ -881,18 +959,15 @@ function generateProductRangeText() {
             
             const products = data.products
 
-           customYmm["products"] = {}
+            customYmm["products"] = {}
 
             products.forEach(product => {
-
                 customYmm["products"][`${product.id}`] = product
-
             })
             
             customYmm["currentCounts"] = data.products.length
             
             renderProducts(data.products)
-
 
             if(isPagination){
                 document.querySelector('.loading-indicator').innerHTML = generatePagination(customYmm.currentPage, 12, customYmm['searchResultsCount']);
@@ -900,21 +975,16 @@ function generateProductRangeText() {
                 document.querySelector('.loading-indicator').innerHTML = displayLoadMore()
             }
 
-
             if(data.products.length == customYmm.productsPerPage){
-
                 customYmm.loadMore = true
-                
             }else{
-                
                 customYmm.loadMore = false
-            
             }
 
             customYmm["categories"] = data.categories;
 
             customYmm["brands"] = data.brands
-
+            customYmm['custom_fields'] = data.custom_fields
             customYmm["priceRanngesVsFrequency"] = data.priceRanngesVsFrequency
             
             displayResponsiveFilters();
@@ -935,16 +1005,14 @@ function generateProductRangeText() {
 
     }
 
-function scrollToTop() {
-    if(!isPagination) return 
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth' // Add smooth scrolling behavior if supported
-    });
-}
+    function scrollToTop() {
+        if(!isPagination) return 
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth' // Add smooth scrolling behavior if supported
+        });
+    }
       
-
-
    function displayPriceRanges(){
 
         const priceIdsAndLabels = customYmm["priceIdsAndLabels"]
@@ -955,12 +1023,18 @@ function scrollToTop() {
 
             return`
                 <div class="input-and-label">
-                    <input ${customYmm["selectedPrices"].includes(id) ? 'checked' : ''} data-term = "${id}" name = "cb-filter" data-filter-type = "price" class = "cb-filter" type = "checkbox" data-price-id = "${id}" id = "cb-${id}">
+                    <input 
+                        ${customYmm["selectedPrices"].includes(id) ? 'checked' : ''} 
+                        data-term = "${id}" 
+                        name = "cb-filter" data-filter-type = "price" 
+                        class = "cb-filter cb-filter-mandatory-filters" 
+                        type = "checkbox" 
+                        data-price-id = "${id}" 
+                        id = "cb-${id}"
+                    >
                     <label for  = "cb-${id}" class="form-label--checkbox">
-                        
                         <span class="brand-name">${name}</span>
                         <span class="brand-hits">${customYmm["priceRanngesVsFrequency"][id]}</span>                        
-                            
                     </label>
                 </div>
             `
@@ -1046,7 +1120,7 @@ function scrollToTop() {
                 name = "shop-by-category"
                 data-term = "${category.url}"
                 data-category-name='${category.name.trim()}'
-                class  = "cb-filter" 
+                class  = "cb-filter cb-filter-mandatory-filters" 
                 data-category-url = "${category.url}"
                 ${customYmm["selectedCategories"].includes(category.url) ? 'checked' : '' } 
             
@@ -1196,12 +1270,9 @@ console.log(queryParts)
 
     function assignListenerToTheCheckBoxes(){
 
-        // Get all checkboxes with the class "cb-filter"
-        const checkboxes = document.querySelectorAll('.cb-filter');
-
-        // Function to handle the change event
+ 
         function handleCheckboxChange(event) {
-
+            console.log("changed")
             customYmm.currentPage = 1
 
             customYmm.loadMore = true
@@ -1221,29 +1292,29 @@ console.log(queryParts)
 
             checkedCheckboxes.forEach(checkedCheckbox => {
 
-            switch(checkedCheckbox.getAttribute("data-filter-type")){
+                switch(checkedCheckbox.getAttribute("data-filter-type")){
 
-                case "category":
-                    
-                    const selectedCategoryId = checkedCheckbox.getAttribute('data-category-url')
-                    
-                    const categoryName = checkedCheckbox.getAttribute('data-category-name')
-                    
-                    selectedCategories.push(selectedCategoryId);
-                    
-                    customYmm['selectedCategoryURLVsName'][selectedCategoryId] = categoryName
-                    
-                break;
+                    case "category":
+                        
+                        const selectedCategoryId = checkedCheckbox.getAttribute('data-category-url')
+                        
+                        const categoryName = checkedCheckbox.getAttribute('data-category-name')
+                        
+                        selectedCategories.push(selectedCategoryId);
+                        
+                        customYmm['selectedCategoryURLVsName'][selectedCategoryId] = categoryName
+                        
+                    break;
 
-                case "brand":
-                   selectedBrands.push(checkedCheckbox.getAttribute('data-term'))
-                break;
+                    case "brand":
+                    selectedBrands.push(checkedCheckbox.getAttribute('data-term'))
+                    break;
 
-                case "price":
-                    selectedPrices.push(checkedCheckbox.getAttribute('data-term'))
-                break;
+                    case "price":
+                        selectedPrices.push(checkedCheckbox.getAttribute('data-term'))
+                    break;
 
-            }
+                }
 
             })
 
@@ -1267,22 +1338,20 @@ console.log(queryParts)
             
             }
 
-
             setURLparams()
-
-
+            console.log("hello")
             fetchProductsAndRender(clearAfterLoad = true)
 
-
         }
-
-
-        // Add a "change" event listener to each checkbox
-        checkboxes.forEach((checkbox) => {
-
-          checkbox.addEventListener('change', handleCheckboxChange);
         
-        });
+       // Get all checkboxes with the class "cb-filter"
+       const checkboxes = Array.from(document.querySelectorAll('.cb-filter-mandatory-filters'));
+       // Function to handle the change event
+       
+       // Add a "change" event listener to each checkbox
+       checkboxes.forEach((checkbox) => {
+           checkbox.addEventListener('change', (event) =>{ handleCheckboxChange(event)} );  
+       });
 
     }
 
@@ -1376,7 +1445,6 @@ console.log(queryParts)
     function uncheckSiblingsAndHideChildren(checkbox) {
         
         function uncheckChildren(childrenContainer){
-
 
             const siblingChildrenContainer = childrenContainer.querySelector('ul');
 
@@ -3230,7 +3298,7 @@ console.log(queryParts)
                     
                     <div class="filters-wrapper-desktop" id="filters-wrapper-desktop">
                         <div class="ymm-filters-selections-wrapper"><div class = "ymm-filters-selections"></div></div>
-                        <div class='filters-only-wrapper'></div>
+                        <div class="filters-only-wrapper"></div>
                     </div>
 
                     <div class="ymm-products-wrapper ymm-forms-and-products">
@@ -3478,6 +3546,7 @@ console.log(queryParts)
 
         retrieveURLparams()
 
+        customYmm['customFieldsSelections'] = {}
         
         function getUrlParamByKey(key) {
           const urlSearchParams = new URLSearchParams(window.location.search);
