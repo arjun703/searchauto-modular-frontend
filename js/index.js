@@ -246,10 +246,10 @@ function displayAddToCartButton(productID) {
 
         const ymmContainerId = 'search-page-ymm-form-container'
 
-        let [selectedYear, selectedMake, selectedModel, selectedSubModel] = returnSelections(ymmContainerId)
+        let [selectedYear, selectedMake, selectedModel] = returnSelections(ymmContainerId)
 
         return`
-            <h4>${selectedYear || ''} ${selectedMake || ''} ${selectedModel || '' } ${selectedSubModel} </h4>
+            <h4>${selectedYear || ''} ${selectedMake || ''} ${selectedModel || '' }  </h4>
         `
 
     }
@@ -834,7 +834,7 @@ function generatePagination(currentPage, resultsPerPage, totalResults) {
         
         const ymmContainerId = 'search-page-ymm-form-container'
         
-        let [selectedYear, selectedMake, selectedModel, selectedSubModel] = returnSelections(ymmContainerId)
+        let [selectedYear, selectedMake, selectedModel] = returnSelections(ymmContainerId)
 
         if(customYmm['isInCategoryPage'] && document.querySelector('.page-listing-header--content')){
                 
@@ -915,7 +915,7 @@ function generateProductRangeText() {
 
         const ymmContainerId = 'search-page-ymm-form-container'
         
-        let [selectedYear, selectedMake, selectedModel, selectedSubModel] = returnSelections(ymmContainerId)
+        let [selectedYear, selectedMake, selectedModel] = returnSelections(ymmContainerId)
 
         showLoadingOverlay()
         const customFilterSelections = [];
@@ -930,7 +930,7 @@ function generateProductRangeText() {
             customFieldsSelection = customFilterSelections.join('::')
         }
 
-        fetch(`${customYmm["searchDataApi"]}?custom_fields=${customFieldsSelection}&sortby=${customYmm['sortBy']}&sub_model=${selectedSubModel}&searchQuery=${customYmm["searchQuery"]}&year=${customYmm[`${ymmContainerId}`].selections.year}&make=${customYmm[`${ymmContainerId}`].selections.make}&model=${customYmm[`${ymmContainerId}`].selections.model}&category=${customYmm['selectedCategory']}&page=${customYmm.currentPage}&limit=${customYmm.productsPerPage}&brands=${customYmm["selectedBrands"].join(',')}&prices=${customYmm["selectedPrices"].join(',')}`)
+        fetch(`${customYmm["searchDataApi"]}?custom_fields=${customFieldsSelection}&sortby=${customYmm['sortBy']}&searchQuery=${customYmm["searchQuery"]}&year=${customYmm[`${ymmContainerId}`].selections.year}&make=${customYmm[`${ymmContainerId}`].selections.make}&model=${customYmm[`${ymmContainerId}`].selections.model}&category=${customYmm['selectedCategory']}&page=${customYmm.currentPage}&limit=${customYmm.productsPerPage}&brands=${customYmm["selectedBrands"].join(',')}&prices=${customYmm["selectedPrices"].join(',')}`)
     
         .then(response => response.json())
 
@@ -1198,13 +1198,13 @@ console.log(queryParts)
             customYmm['selectedPrices'].push(value) 
           } else if(key === "v"){
               value = value.replaceAll('%3E', '>');
-               let [selectedYear=false, selectedMake=false, selectedModel=false, selectedSubModel=''] 
+               let [selectedYear=false, selectedMake=false, selectedModel=false] 
                     = value.split('>').map(e=>e.replaceAll('_', ' '))
             customYmm['search-page-ymm-form-container']['selections'] = {
                 year: selectedYear,
                 make: selectedMake,
                 model: selectedModel,
-                sub_model: selectedSubModel
+                
             }
             manageHighlighted('search-page-ymm-form-container')
           }
@@ -1251,8 +1251,8 @@ console.log(queryParts)
             tail += `prices/${customYmm['selectedPrices'].join(',')}/`
 
         if(customYmm['isInCategoryPage'] || customYmm['isInSearchPage']){
-            let [selectedYear, selectedMake, selectedModel, selectedSubModel] = returnSelections('search-page-ymm-form-container')
-            let ymmdfn = [selectedYear, selectedMake, selectedModel, selectedSubModel]
+            let [selectedYear, selectedMake, selectedModel] = returnSelections('search-page-ymm-form-container')
+            let ymmdfn = [selectedYear, selectedMake, selectedModel]
             ymmdfn = ymmdfn.filter(e=> (e !== false && e!== '')).map(ee=>ee.replaceAll(' ', '_'))
             if(ymmdfn.length){
                 tail += `v/${ymmdfn.join('>')}/`
@@ -1710,7 +1710,7 @@ console.log(queryParts)
 
         const fitmentResultClass = "fitment-result"
 
-        let [selectedYear, selectedMake, selectedModel, selectedSubModel] = returnSelections(containerId)
+        let [selectedYear, selectedMake, selectedModel] = returnSelections(containerId)
 
         carrySelectedVehicle();
 
@@ -1722,8 +1722,7 @@ console.log(queryParts)
             if (
                 (selectedYear >= parseInt(fitmentData.from_year) && selectedYear <= parseInt(fitmentData.to_year)) &&
                 selectedMake == fitmentData.make.trim() &&
-                selectedModel == fitmentData.model.trim() &&
-                (selectedSubModel == '' || fitmentData.sub_model.trim() == '' || selectedSubModel == fitmentData.sub_model.trim())
+                selectedModel == fitmentData.model.trim()
             ) {
                 fits = true;
                 return; // Exit the loop early since we found a fit
@@ -1745,9 +1744,6 @@ console.log(queryParts)
                         <span class="selected-ymm-ymm">
                             ${selectedYear} ${selectedMake} ${selectedModel}
                         </span>
-                        <span class="selected-vq">
-                            ${selectedSubModel}
-                        </span>
                     </span>
                 `
             );
@@ -1761,9 +1757,6 @@ console.log(queryParts)
                 <span class="selected-ymm selected-ymm-vq"> 
                     <span class="selected-ymm-ymm">
                         ${selectedYear} ${selectedMake} ${selectedModel}
-                    </span>
-                    <span class="selected-vq">
-                        ${selectedSubModel} 
                     </span>
                 </span>
             `);
@@ -1783,18 +1776,16 @@ console.log(queryParts)
 
     const decideWhatHappensAfterFormChangeInProductPage = async (containerId) => {
 
-        let [selectedYear, selectedMake, selectedModel, selectedSubModel] = returnSelections(containerId)
+        let [selectedYear, selectedMake, selectedModel] = returnSelections(containerId)
         
         let dropdowns = await fetchYmmOnlyDataAndRender(containerId);
-        dropdowns.sub_model_arr = dropdowns.sub_model_arr.filter(elem=> elem !== '')
 
         manageHighlighted(containerId)
 
         if(
             (
                 (dropdowns.makes.length && selectedMake == false ) ||
-                (dropdowns.models.length && selectedModel == false ) ||
-                (isSubModelExists() && dropdowns.sub_model_arr.length && selectedSubModel == '' )
+                (dropdowns.models.length && selectedModel == false ) 
             ) ||
             (
                 selectedMake == false || 
@@ -1837,12 +1828,11 @@ console.log(queryParts)
     }
     
     function manageHighlighted(containerId){
-        let [selectedYear, selectedMake, selectedModel, selectedSubModel] = returnSelections(containerId)
+        let [selectedYear, selectedMake, selectedModel] = returnSelections(containerId)
         addHighlighted(containerId, "select-year")
         if(selectedYear) addHighlighted(containerId, "select-make")
         enableSelectTag(containerId, "btn-clear")
         if(selectedMake) addHighlighted(containerId, "select-model")
-        if(selectedModel) addHighlighted(containerId, "select-sub-model")
 
     }
     
@@ -1866,7 +1856,6 @@ console.log(queryParts)
                         customYmm[`${containerId}`].selections.year = selectTag.value
                         customYmm[`${containerId}`].selections.make = false
                         customYmm[`${containerId}`].selections.model = false
-                        customYmm[`${containerId}`].selections.sub_model = ''
 
                         disableSelectTag(containerId, "select-make")
                         disableSelectTag(containerId, "select-model")
@@ -1877,7 +1866,6 @@ console.log(queryParts)
                     case "select-make":
                         customYmm[`${containerId}`].selections.model = false
                         customYmm[`${containerId}`].selections.make = selectTag.value
-                        customYmm[`${containerId}`].selections.sub_model = ''
 
                         disableSelectTag(containerId, "select-model")
                         disableSelectTag(containerId, "btn-go")
@@ -1885,16 +1873,10 @@ console.log(queryParts)
 
                     case "select-model":
                         customYmm[`${containerId}`].selections.model = selectTag.value
-                        customYmm[`${containerId}`].selections.sub_model = ''
-
                     break;    
-                    
-                    case "select-sub-model":
-                        customYmm[`${containerId}`].selections.sub_model = selectTag.value
-                        break;
+
                     
                 }
-                disableSelectTag(containerId, "select-sub-model")
 
                 callbackToChange(containerId);
                 
@@ -1922,7 +1904,6 @@ console.log(queryParts)
         customYmm[`${containerId}`].selections.year = false
         customYmm[`${containerId}`].selections.make = false
         customYmm[`${containerId}`].selections.model = false
-        customYmm[`${containerId}`].selections.sub_model = ''
         
         enableSelectTag(containerId, "select-year")
         resetSelectTag(containerId, "select-year")
@@ -1931,8 +1912,6 @@ console.log(queryParts)
         disableSelectTag(containerId, "select-model")
         resetSelectTag(containerId, "select-model")
                 
-        disableSelectTag(containerId, "select-sub-model")
-        resetSelectTag(containerId, "select-sub-model")
 
         disableSelectTag(containerId, "btn-go")
         disableSelectTag(containerId, "btn-clear")
@@ -1976,9 +1955,8 @@ console.log(queryParts)
         customYmm[`${containerId}`]["makes"] = []
         
         customYmm[`${containerId}`]["models"] = []
-        customYmm[`${containerId}`]["sub_model_arr"] = []
         
-        customYmm[`${containerId}`]["selections"] = {year: false, make: false, model: false, sub_model: ''}
+        customYmm[`${containerId}`]["selections"] = {year: false, make: false, model: false}
         
         return`
 
@@ -2003,15 +1981,6 @@ console.log(queryParts)
                             <option>Model</option>
                         </select>
                     </div>
-                    
-                    ${containerId == "ymm-add-to-garage-form-modal" ? '<div class="optional-field-label-wrapper">Optional Fields </div>' : '' }
-                        
-                    <div class="sub_model ymm-form-select">
-                        <select data-type = "select-sub-model" class="select-sub-model ymm-select" disabled>
-                            <option>Sub Model</option>
-                        </select>
-                    </div>
-                    
                 
                 </div>
                 
@@ -2072,7 +2041,7 @@ console.log(queryParts)
         
         try{
             
-            const response = await fetch(`${customYmm["ymmOnlyApi"]}?category=${customYmm["selectedCategory"]}&sub_model=${customYmm[containerId].selections.sub_model}&year=${customYmm[containerId].selections.year}&make=${customYmm[containerId].selections.make}&model=${customYmm[containerId].selections.model}`)
+            const response = await fetch(`${customYmm["ymmOnlyApi"]}?category=${customYmm["selectedCategory"]}&year=${customYmm[containerId].selections.year}&make=${customYmm[containerId].selections.make}&model=${customYmm[containerId].selections.model}`)
         
             const responseJson = await response.json()
             
@@ -2154,7 +2123,6 @@ console.log(queryParts)
 
         customYmm[`${containerId}`]["makes"] =  [...new Set(data.makes)].sort()
         customYmm[`${containerId}`]["models"] =  [...new Set(data.models)].sort()
-        customYmm[`${containerId}`]["sub_model_arr"] =  [...new Set(data.sub_model_arr)].sort().filter(sub_model=>  sub_model != null && sub_model.trim().length > 0)
 
         if(customYmm[`${containerId}`]['selections']['year']){
             var year = customYmm[`${containerId}`]['selections']['year']
@@ -2221,21 +2189,6 @@ console.log(queryParts)
             
         }
 
-        if(customYmm[`${containerId}`].selections.model == false  ) return
-        // need to return even when we are in the home page because we won't be displaying other qualifiers in the home page
-    
-        if(customYmm[`${containerId}`]["sub_model_arr"].length > 0){
-            
-            displaySelectTag(containerId, "select-sub-model")
-            enableSelectTag(containerId, "select-sub-model")
-            
-            document.querySelector(`#${containerId}`).querySelector('.select-sub-model').innerHTML = createOptionTag('Sub Model') + customYmm[`${containerId}`]["sub_model_arr"].map(model => createOptionTag(model, containerId)).join('')
-
-        }else {
-            hideSelectTag(containerId, "select-sub-model")
-        }
-        
-
     }
 
     function createRequiredWrappersForProductPage(){
@@ -2291,33 +2244,6 @@ console.log(queryParts)
         document.querySelector('.custom-ymm-form-body').style.display = "block"
         document.querySelector('.fitment-result').style.display = "none";
     }
-
-
-   function isSubModelExists(){
-        for(var i=0; i < customYmm["fitmentData"].length; i++){
-            var data = customYmm["fitmentData"][i];
-            if(data.sub_model.trim().length > 0){
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-
-    function returnSubModelTH(){
-        if(isSubModelExists()) return '<th>Sub Model</th>'
-        return ''
-    }
-
-
-    function returnSubModelTD(d){
-        
-        if(isSubModelExists()) return `<td>${d}</td>`
-        return ''
-    }
-
-
 
 
     function toggleViewMoreOrLess(){
@@ -2386,7 +2312,6 @@ console.log(queryParts)
                                     <th>Year</th>
                                     <th>Make</th>
                                     <th>Model</th>
-                                    ${returnSubModelTH()}
                                 </tr>
     
                                 ${tempFitmentRows.map(data => {
@@ -2396,7 +2321,6 @@ console.log(queryParts)
                                             <td>${data.from_year} - ${data.to_year}</td>
                                             <td>${data.make}</td>
                                             <td>${data.model}</td>
-                                            ${returnSubModelTD(data.sub_model)}
                                         </tr>
                                     `   
     
@@ -2574,8 +2498,7 @@ console.log(queryParts)
                     customYmm['product-page-ymm-form']['selections'] = {
                         year: ymm.year,
                         make: ymm.make,
-                        model: ymm.model,
-                        sub_model: ymm.sub_model
+                        model: ymm.model
                     }
                 }
                 
@@ -2661,7 +2584,7 @@ console.log(queryParts)
     function fillGarageWithVehicles(){
 
     if(customYmm["garage"].length > 0 ) 
-        return customYmm["garage"].map(({selected =false, id, year, make, model, sub_model }) => {
+        return customYmm["garage"].map(({selected =false, id, year, make, model }) => {
 
             return`
                 <div class  =  "each-vehicle-in-garage ${selected ? 'selected-vehicle-in-garage': ''} d-flex align-items-center ymm-justify-content-between ymm-mt-2 cursor-pointer  ">
@@ -2671,9 +2594,6 @@ console.log(queryParts)
                         <span class="selected-ymm-each selected-ymm-vq-each"> 
                             <span class="selected-ymm-ymm-each">
                                 ${year} ${make} ${model} 
-                            </span>
-                            <span class="selected-vq-each">
-                                ${sub_model}
                             </span>
                         </span>
                         
@@ -2833,9 +2753,6 @@ console.log(queryParts)
                         <span class="selected-ymm-ymm">
                             ${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}
                         </span>
-                        <span class="selected-vq">
-                            ${selectedVehicle.sub_model} 
-                        </span>
                     </span>
                     <span class = "filter-pipe"> | </span>
                     <span class = "change-vehicle"> Change </span> 
@@ -2969,7 +2886,6 @@ console.log(queryParts)
 
         })
 
-
         if(displayGarageFlag) constructGarageAndDisplayIt()
 
     }
@@ -3078,15 +2994,13 @@ console.log(queryParts)
     function resetDropdownData(containerId){
         customYmm[`${containerId}`]['makes'] = []
         customYmm[`${containerId}`]['models']= []
-        customYmm[`${containerId}`]['sub_model_arr'] = []
     }
     
     function returnSelections(containerId){
         const selectedYear = customYmm[`${containerId}`].selections.year
         const selectedMake = customYmm[`${containerId}`].selections.make
         const selectedModel = customYmm[`${containerId}`].selections.model
-        const selectedSubModel = customYmm[`${containerId}`].selections.sub_model
-        return[selectedYear, selectedMake, selectedModel, selectedSubModel]
+        return[selectedYear, selectedMake, selectedModel]
         
     }
     
@@ -3094,14 +3008,13 @@ console.log(queryParts)
         const years = customYmm[`${containerId}`]['years']
         const makes = customYmm[`${containerId}`]['makes']
         const models = customYmm[`${containerId}`]['models']
-        const sub_model_arr = customYmm[`${containerId}`]['sub_model_arr']
-        return [years, makes, models, sub_model_arr]
+        return [years, makes, models]
         
     }
 
     function goForAddToGarage(containerId){
         
-        let [selectedYear, selectedMake, selectedModel, selectedSubModel] = returnSelections(containerId)
+        let [selectedYear, selectedMake, selectedModel] = returnSelections(containerId)
         pushToGarage(containerId)
         setupGarage(false);
         hideOverlay()
@@ -3112,8 +3025,7 @@ console.log(queryParts)
             customYmm[`${ymmContainerId}`].selections = {
                 year: selectedYear,
                 make: selectedMake,
-                model: selectedModel,
-                sub_model: selectedSubModel
+                model: selectedModel
             }
 
             fetchProductsAndRender()
@@ -3135,7 +3047,7 @@ console.log(queryParts)
             let basePath = protocol+'//'+hostname+'/a/search/'
             window.location.href =   protocol+'//'+hostname+'/search/'
             return
-            let ymmdfn = [selectedYear, selectedMake, selectedModel, selectedSubModel]
+            let ymmdfn = [selectedYear, selectedMake, selectedModel]
             ymmdfn = ymmdfn.filter(e=> (e !== false && e!== '')).map(ee=>ee.replaceAll(' ', '_'))
             if(ymmdfn.length){
                 basePath += `v/${ymmdfn.join('>')}/`
@@ -3151,11 +3063,10 @@ console.log(queryParts)
         
         try{
             
-            let [selectedYear, selectedMake, selectedModel, selectedSubModel ] = returnSelections(containerId)
+            let [selectedYear, selectedMake, selectedModel ] = returnSelections(containerId)
             
             let dropdownsInAddToGarage = await fetchYmmOnlyDataAndRender(containerId);
             
-            dropdownsInAddToGarage.sub_model_arr = dropdownsInAddToGarage.sub_model_arr.filter(elem=> elem !== '')
             
             manageHighlighted(containerId)
 
@@ -3163,21 +3074,11 @@ console.log(queryParts)
                 // enable the go button after seelcteing these three
                 enableSelectTag(containerId, "btn-go")
                 
-                if(!dropdownsInAddToGarage.sub_model_arr.length ){
-                    
-                    // hide optional fields
-                    document.querySelector('.optional-field-label-wrapper').style.display = "none"
-                    
-                }else{
-                    document.querySelector('.optional-field-label-wrapper').style.display = "block"
-                }
-                
             }
             
             if(
                 (dropdownsInAddToGarage.makes.length && selectedMake == false ) ||
-                (dropdownsInAddToGarage.models.length && selectedModel == false ) ||
-                (dropdownsInAddToGarage.sub_model_arr.length && selectedSubModel == '' )
+                (dropdownsInAddToGarage.models.length && selectedModel == false ) 
             ){
             }else{
                 removeHighlighted(containerId)
@@ -3365,9 +3266,8 @@ console.log(queryParts)
     
     function hideOrShowFormAfterLoadingDropdownValues(dropdowns, containerId){
         
-        let [selectedYear, selectedMake, selectedModel, selectedSubModel] = returnSelections(containerId)
+        let [selectedYear, selectedMake, selectedModel] = returnSelections(containerId)
 
-        dropdowns.sub_model_arr = dropdowns.sub_model_arr.filter(elem=> elem !== '')
 
         if(selectedYear && selectedMake && selectedModel){
             enableSelectTag(containerId, "btn-go")
@@ -3377,8 +3277,7 @@ console.log(queryParts)
         if(
             (
                 (dropdowns.makes.length && selectedMake == false ) ||
-                (dropdowns.models.length && selectedModel == false ) ||
-                (dropdowns.sub_model_arr.length && selectedSubModel == '' )
+                (dropdowns.models.length && selectedModel == false ) 
             )
                 ||
             (
@@ -3398,13 +3297,12 @@ console.log(queryParts)
         customYmm.currentPage = 1
         clearProductDiv()
 
-        let [selectedYear, selectedMake, selectedModel, selectedSubModel] = returnSelections(containerId)
+        let [selectedYear, selectedMake, selectedModel] = returnSelections(containerId)
         setURLparams()
         clearContentsForCategoryPage()
         
         let dropdowns = await fetchYmmOnlyDataAndRender(containerId);
         manageHighlighted(containerId)
-        dropdowns.sub_model_arr = dropdowns.sub_model_arr.filter(elem=> elem !== '')
 
         if(selectedYear && selectedMake && selectedModel  ){
             enableSelectTag(containerId, "btn-go")
@@ -3412,8 +3310,7 @@ console.log(queryParts)
         if(
            (
                 (dropdowns.makes.length && selectedMake == false ) ||
-                (dropdowns.models.length && selectedModel == false ) ||
-                (dropdowns.sub_model_arr.length && selectedSubModel == '' )
+                (dropdowns.models.length && selectedModel == false ) 
             )
         ){
             if(customYmm['hideProductsUntilSelected'] === true){
@@ -3467,7 +3364,7 @@ console.log(queryParts)
             // Find the part of the URL after the '?'
             let basePath = protocol+'//'+hostname+'/a/search/'
             window.location.href =  protocol+'//'+hostname+'/search/'
-            let ymmdfn = [ymm.year, ymm.make, ymm.model, ymm.sub_model] 
+            let ymmdfn = [ymm.year, ymm.make, ymm.model] 
             ymmdfn = ymmdfn.filter(e=> (e !== false && e!== '')).map(ee=>ee.replaceAll(' ', '_'))
             if(ymmdfn.length){
                 basePath += `v/${ymmdfn.join('>')}/`
@@ -3592,7 +3489,6 @@ console.log(queryParts)
                     year: ymm.year,
                     make: ymm.make,
                     model: ymm.model,
-                    sub_model: ymm.sub_model
                 }
                 
                 manageHighlighted(ymmContainerIdForSearchPage)
@@ -3691,7 +3587,6 @@ console.log(queryParts)
         const selectedYear = customYmm[`${containerId}`].selections.year
         const selectedMake = customYmm[`${containerId}`].selections.make
         const selectedModel = customYmm[`${containerId}`].selections.model
-        const selectedSubModel = customYmm[`${containerId}`].selections.sub_model
 
         if(customYmm["garage"].length){
 
@@ -3715,7 +3610,6 @@ console.log(queryParts)
                     vehicle.make === selectedMake &&
                     vehicle.model === selectedModel
                 ){
-                    vehicle.sub_model = selectedSubModel 
                     vehicle.selected = true
                     setCookie("garage", JSON.stringify(customYmm["garage"]))
                     return
@@ -3732,7 +3626,6 @@ console.log(queryParts)
                 year: selectedYear,
                 make: selectedMake,
                 model: selectedModel,
-                sub_model: selectedSubModel
             }
         )
 
@@ -3807,8 +3700,8 @@ console.log(queryParts)
         let basePath = protocol+'//'+hostname+'/a/search/'
         window.location.href =   protocol+'//'+hostname+'/search/'
 
-        let [selectedYear, selectedMake, selectedModel, selectedSubModel] = returnSelections('custom-ymm-form-for-home-page')
-        let ymmdfn = [selectedYear, selectedMake, selectedModel, selectedSubModel]
+        let [selectedYear, selectedMake, selectedModel] = returnSelections('custom-ymm-form-for-home-page')
+        let ymmdfn = [selectedYear, selectedMake, selectedModel]
         ymmdfn = ymmdfn.filter(e=> (e !== false && e!== '')).map(ee=>ee.replaceAll(' ', '_'))
         if(ymmdfn.length){
             basePath += `v/${ymmdfn.join('>')}/`
@@ -3819,7 +3712,7 @@ console.log(queryParts)
 
     const decideWhatHappensAfterFormChangeInHomePage = async (containerId) => {
     
-        let [selectedYear, selectedMake, selectedModel, selectedSubModel] = returnSelections(containerId)
+        let [selectedYear, selectedMake, selectedModel] = returnSelections(containerId)
         if(selectedYear && selectedMake && selectedModel){
             removeHighlighted(containerId)
             saveOrGoForHomePage(containerId);
@@ -3842,7 +3735,6 @@ console.log(queryParts)
         var containerId = 'custom-ymm-form-for-home-page'
         
         // following blocks because we dont need them for the home page
-        hideSelectTag(containerId, "select-sub-model")
         
 
 
@@ -3859,7 +3751,6 @@ console.log(queryParts)
             enableSelectTag(containerId, "btn-clear")
         }
         
-        hideSelectTag(containerId, "select-sub-model")
         
     }
 
