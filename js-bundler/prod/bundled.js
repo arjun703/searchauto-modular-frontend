@@ -2033,7 +2033,9 @@ console.log(queryParts)
 
         // fill up the year slect tag
 
-        document.querySelector(`#${withContainerId}`).querySelector('.select-year').innerHTML = createOptionTag('Year') + customYmm[`${withContainerId}`]["years"].map(year => createOptionTag(year)).join('')
+        document.querySelector(`#${withContainerId}`).querySelector('.select-year').innerHTML = 
+        createOptionTag({label: 'Year', key: 'year', disabled:true}) + 
+        customYmm[`${withContainerId}`]["years"].map(year => createOptionTag({label: year, key: year, disabled: false})).join('')
 
     }
 
@@ -2088,18 +2090,18 @@ console.log(queryParts)
     }
     
 
-    function createOptionTag(value, containerId = false){
+    function createOptionTag({label,key, disabled = false}, containerId = false){
 
         let selected =false
 
         if(containerId != false ){
 
-            if(Object.values(customYmm[`${containerId}`]["selections"]).includes(value)) selected = true
+            if(Object.values(customYmm[`${containerId}`]["selections"]).includes(key)) selected = true
 
         }
 
         return `
-            <option value = "${value}" ${selected ? 'selected' : ''} >${value}</option>
+            <option  value = "${key}" ${selected ? 'selected' : ''} >${label}</option>
         `
     }    
     
@@ -2147,36 +2149,9 @@ console.log(queryParts)
 
             enableSelectTag(containerId, "select-make")
 
-            document.querySelector(`#${containerId}`).querySelector('.select-make').innerHTML = createOptionTag('Make') + customYmm[`${containerId}`]["makes"].map(make => createOptionTag(make, containerId)).join('')
-
-            if(isInVehiclePage()){
-               var YMMvalues = returnYMMvaluesFromVehiclePage()
-               let hereIsMake = false
-               hereIsMake = YMMvalues[0]
-               if(YMMvalues.length == 3){
-                  hereIsMake = YMMvalues[1]
-               }
-                
-                if(hereIsMake && customYmm[`${containerId}`].selections.make ==false ){
-                    
-                    var selectElement = document.querySelector(`#${containerId} .select-make`);
-
-                    // Loop through the options
-                    for (var i = 0; i < selectElement.options.length; i++) {
-                        var option = selectElement.options[i];
-                
-                        // Check if the option value matches the desired make
-                        if (option.value === hereIsMake) {
-                            // Set the selected attribute and trigger a change event
-                            option.selected = true;
-                            var event = new Event('change');
-                            selectElement.dispatchEvent(event);
-                            break; // Exit the loop once the option is found
-                        }
-                    }
-                    
-                }
-            }
+            document.querySelector(`#${containerId}`).querySelector('.select-make').innerHTML = 
+            createOptionTag({label: 'Make', key:'make', disabled: true}) + 
+            customYmm[`${containerId}`]["makes"].map(({label, key}) => createOptionTag({label, key, disabled:false}, containerId)).join('')
 
         }
         
@@ -2184,9 +2159,10 @@ console.log(queryParts)
 
             enableSelectTag(containerId, "select-model")
 
-            document.querySelector(`#${containerId}`).querySelector('.select-model').innerHTML = createOptionTag('Model') + customYmm[`${containerId}`]["models"].map(model => createOptionTag(model, containerId)).join('')
+            document.querySelector(`#${containerId}`).querySelector('.select-model').innerHTML = 
+            createOptionTag({label: 'Model', key: 'model', disabled: true}) 
+            + customYmm[`${containerId}`]["models"].map(({label, key}) => createOptionTag({label, key, disabled:false}, containerId)).join('')
 
-            
         }
 
     }
@@ -3302,6 +3278,7 @@ console.log(queryParts)
         clearContentsForCategoryPage()
         
         let dropdowns = await fetchYmmOnlyDataAndRender(containerId);
+
         manageHighlighted(containerId)
 
         if(selectedYear && selectedMake && selectedModel  ){
@@ -3316,7 +3293,7 @@ console.log(queryParts)
             if(customYmm['hideProductsUntilSelected'] === true){
                 // do nothing, hide products when vehicle selected
             }else{
-                fetchProductsAndRender()
+                fetchProductsAndRender(clearAfterLoad = true)
             }
         }else{
             removeHighlighted(containerId)
@@ -3371,7 +3348,6 @@ console.log(queryParts)
             }
 
             // window.location.href =  basePath
-
 
         }
         
