@@ -189,13 +189,19 @@ function displayAddToCartButton(productID) {
     }
 
     function renderProducts(products, append = false){
-        document.querySelector('.no-results-message-outer').innerHTML = ''
-        document.querySelector('.search-results-count').innerHTML = ''
+        
+        document.querySelector('.no-results-message-outer').innerHTML = ''  
+        
+        if(document.querySelector('.search-results-count')){
+            document.querySelector('.search-results-count').innerHTML = ''
+        }
+
         if(customYmm['searchResultsCount'] > 0){
 
-            // alert(customYmm.currentPage)
-            document.querySelector('.search-results-count').innerHTML = generateProductRangeText()
-            
+            if(document.querySelector('.search-results-count')){
+                // alert(customYmm.currentPage)
+                document.querySelector('.search-results-count').innerHTML = generateProductRangeText()
+            }
 
             if(isPagination){
                 document.querySelector('.ymm-products').innerHTML = ''
@@ -203,6 +209,7 @@ function displayAddToCartButton(productID) {
             }else{
                 document.querySelector('.ymm-products').innerHTML += products.map(product => constructProductDiv(product)).join('')
             }
+
         }else{
 
             if( customYmm.currentPage == 1){
@@ -211,7 +218,7 @@ function displayAddToCartButton(productID) {
                         <p class="no-results-msg-inner">
                             No any products exist for this filter combination.
                             <br>
-                            <a href = "${customYmm["siteURL"]}/search/">Please Click Here</a> to find all the parts that fit your selection or <a href="#"> ${returnClearAllText()} </a> filters.
+                            <a href = "${customYmm["siteURL"]}/search/">Please Click Here</a> to find all the parts that fit your selection or <a href="#"> <span onclick="removeAllFilters()"> Clear All</span> </a> filters.
                         </p>
                     </div>
                 `
@@ -312,13 +319,13 @@ function hideLoadingOverlay() {
 }
 
 
-
 function removeAllFilters(){
-    
+
     customYmm['selectedCategories'].length && removeSelectedCategory(customYmm['selectedCategories'][0]);
     removeSelectedBrand();
     removeSelectedPrice(); 
     customYmm['searchQuery'] = '';
+    customYmm['customFieldsSelections'] = {}
     fetchProductsAndRender();
 
 }
@@ -333,8 +340,10 @@ function returnClearAllText(){
             !customYmm['isInCategoryPage'] && customYmm['selectedCategories'].length
         )    
     ){
+        document.querySelector('.ymm-filters-selections-wrapper').style.display="block"
         return'<span class="remove-all" onclick="removeAllFilters()">Start Over</span>'
     }else{
+        document.querySelector('.ymm-filters-selections-wrapper').style.display="none"
         return ''
     }
     
@@ -692,7 +701,7 @@ function displayResponsiveFilters(){
     
     if(!(customYmm['isInCategoryPage'] || customYmm['isInSearchPage'] || customYmm['isInBrandPage'] )) return
 
-    if(window.innerWidth > 1024){
+    if(window.innerWidth >= 768){
     
         // desktop
         console.log("display only in desktop ")
@@ -908,6 +917,10 @@ function generateProductRangeText() {
     function fetchProductsAndRender(  clearAfterLoad  = false){
         
         // clear after load meaning whether or not to clear the product previously fetched
+        if(window.innerWidth < 1024 && document.body.classList.contains('mobile-filter-open')){
+            hideOrShowMobileFilter()
+        }
+
 
         var hideProductsUntilVehicleSelected = true;
         
@@ -939,6 +952,8 @@ function generateProductRangeText() {
             if(clearAfterLoad){
                 clearProductDiv()
             }
+
+           
 
             hideLoadingOverlay()
 
@@ -1609,7 +1624,7 @@ console.log(queryParts)
     customYmm["garageButtonWrapper"] = ".header-nav-inner"
     customYmm["garageButtonWrapperMobile"] = ".section-header-mobile";
     
-    customYmm["quickSearchWrapper"] = ".search-modal__content"
+    customYmm["quickSearchWrapper"] = ".block-search-custom"
     customYmm["searchQuery"] = ""
     
     customYmm["fitmentTableWrapper"] = ".fitment-content"
@@ -1620,7 +1635,7 @@ console.log(queryParts)
     customYmm['filtersWrapperMobile'] = '#filters-wrapper-mobile';
     customYmm['filtersWrapperDesktop'] = '.filters-only-wrapper';
 
-    customYmm['filtersWrapperMobileSidebarClass'] = "halo-sidebar halo-sidebar-left";
+    customYmm['filtersWrapperMobileSidebarClass'] = "sidebar-mobile-filter";
 
 
     createFiltersMobileWrapperAndAppend();
@@ -1662,14 +1677,14 @@ console.log(queryParts)
                     </svg>
                 </div>
                 <div class="verify-fitment_fitment">
-                    <div class="verify-fitment_title">FITS YOUR VEHICLE
+                    <div class="verify-fitment_title">This product fits your
                     </div>
                     <div class="fitment-message">
                         ${message}
                     </div>
                 </div>
                 <div class="verify-fitment_body">
-                    <a class = "ymm-link" onclick = "displayYMMformFromBody()">Change Vehicle</a> 
+                    <a class = "ymm-link" onclick = "displayYMMformFromBody()">(Change Vehicle)</a> 
                 </div>
             </div>
 
@@ -1721,8 +1736,8 @@ console.log(queryParts)
         customYmm["fitmentData"].forEach((fitmentData, index) => {
             if (
                 (selectedYear >= parseInt(fitmentData.from_year) && selectedYear <= parseInt(fitmentData.to_year)) &&
-                selectedMake == fitmentData.make.trim() &&
-                selectedModel == fitmentData.model.trim()
+                selectedMake == fitmentData.make_key.trim() &&
+                selectedModel == fitmentData.model_key.trim()
             ) {
                 fits = true;
                 return; // Exit the loop early since we found a fit
@@ -1730,7 +1745,7 @@ console.log(queryParts)
         });
 
         if (fits) {
-            
+
             if(document.querySelector('#form-action-addToCart')){
                 document.querySelector('#form-action-addToCart').disabled= false
                 document.querySelector('#form-action-addToCart').style.cursor= "pointer"
@@ -1765,6 +1780,10 @@ console.log(queryParts)
     }
     
     function saveOrGoforProductPage(containerId){
+        let [selectedYear, selectedMake, selectedModel] = returnSelections(containerId)
+        if(!(selectedYear && selectedMake && selectedModel)){
+            return
+        }
         pushToGarage(containerId)
         setupGarage(false);
         // hide ymm form
@@ -1989,11 +2008,11 @@ console.log(queryParts)
                     <div class="ymm-button-holder">
                     
                         <div class = "ymm-go-btn">
-                            <button class ="button button-primary btn-go" disabled>Go</button>
+                            <div class ="button button-primary btn-go" disabled>Go</div>
                         </div>
                         
                         <div class = "ymm-clear-btn">
-                            <button class ="button button-secondary btn-clear" disabled>${returnRefreshIcon()}</button>
+                            <div class ="button button-secondary btn-clear"  disabled>${returnRefreshIcon()}</div>
                         </div>
                         
                     </div>
@@ -2064,6 +2083,9 @@ console.log(queryParts)
     
         document.querySelector(`#${containerId}`).querySelector(`.${selectTagClass}`).disabled = true
         resetSelectTag(containerId, selectTagClass)
+        if(selectTagClass === "btn-bo" ){
+            document.querySelector(`#${containerId}`).querySelector(`.${selectTagClass}`).onclick= () => {}
+        }
     }
 
 
@@ -2381,7 +2403,6 @@ console.log(queryParts)
                 hideYMMFformFromBody()
 
                 document.querySelector('.fitment-result').innerHTML = `
-
                     <div class = "ymm-fitment-result-table">
                         <div class="ymm-fitment-verify-inner">
                             <div class = "ymm-fitment-icon-holder">
@@ -2393,12 +2414,9 @@ console.log(queryParts)
                             </div>
                         </div>
                     </div>
-
                 `
-
             }else{
 
-                
                 // document.querySelector('.halo-recommendations-block .halo-block-content ').remove()
                 if(document.querySelector('.product-recommendations')){
                     document.querySelector('.product-recommendations').innerHTML = `
@@ -2410,11 +2428,9 @@ console.log(queryParts)
                                     </h3>
                                 </div>                            
                                 <div class="products-related">
-                                    
                                   <div class="carousel-products-related ymm-products-wrapper">
                                     ${data.relatedProducts.map(rp => constructProductDiv(rp)).join(' ')}
                                   </div>
-                                 
                                 </div>        
                             </div>
                         </div>
@@ -2791,51 +2807,55 @@ console.log(queryParts)
 
         if(document.querySelector('#newly-added-garage-btn'))
             document.querySelector('#newly-added-garage-btn').remove()
-              
+           
+        
+        document.querySelector(customYmm["garageButtonWrapper"]).innerHTML += `
+                                            
+        <!-- need-to-change for every site -->
+                                    
+        <div id = "newly-added-garage-btn" class="navPages-item navPages-item-page">
+            <input type="checkbox" id="cb-garage-btn" class="hidden">
+            <label for="cb-garage-btn" class ='navPages-action' id="garage-btn">
+                ${returnGarageIconOrNothing()}
+                ${returnGarageText()}
+            </label>
+        </div>
+
+    `
+
         if(window.innerWidth > 1024){
                                         
-            document.querySelector(customYmm["garageButtonWrapper"]).innerHTML += `
-                                            
-                <!-- need-to-change for every site -->
-                                            
-                <div id = "newly-added-garage-btn" class="navPages-item navPages-item-page">
-                    <input type="checkbox" id="cb-garage-btn" class="hidden">
-                    <label for="cb-garage-btn" class ='navPages-action' id="garage-btn">
-                        ${returnGarageIconOrNothing()}
-                        ${returnGarageText()}
-                    </label>
-                </div>
-    
-            `
+
         }else{
                        
-                       
-    
-        // Select the element with class "section-header-advanced"
-        var sectionHeaderAdvanced = document.querySelector('.section-header-navigation');
-        
-        // Create a new div element
-        var customDiv = document.createElement('sticky-ymm-mobile');
-        
-        // Add content to the new div
-        customDiv.innerHTML = `
-            <div id = "newly-added-garage-btn" class="navPages-item navPages-item-page">
-                <input type="checkbox" id="cb-garage-btn" class="hidden">
-                <label for="cb-garage-btn" class ='navPages-action' id="garage-btn">
-                    ${returnGarageIconOrNothing()}
-                    ${returnGarageText()}
-                </label>
-            </div>
-        `;
-        
-        // Insert the new div after the section header advanced div
-        sectionHeaderAdvanced.parentNode.insertBefore(customDiv, sectionHeaderAdvanced.nextSibling);
+            // Select the element with class "section-header-advanced"
+            var sectionHeaderAdvanced = document.querySelector('.section-header-navigation');
             
+            if(sectionHeaderAdvanced){
+
+                // Create a new div element
+                var customDiv = document.createElement('sticky-ymm-mobile');
+                
+                // Add content to the new div
+                customDiv.innerHTML = `
+                    <div id = "newly-added-garage-btn" class="navPages-item navPages-item-page">
+                        <input type="checkbox" id="cb-garage-btn" class="hidden">
+                        <label for="cb-garage-btn" class ='navPages-action' id="garage-btn">
+                            ${returnGarageIconOrNothing()}
+                            ${returnGarageText()}
+                        </label>
+                    </div>
+                `;
+                
+                // Insert the new div after the section header advanced div
+                sectionHeaderAdvanced.parentNode.insertBefore(customDiv, sectionHeaderAdvanced.nextSibling);
+            }
+
         }
+
         document.querySelector('#cb-garage-btn').addEventListener('change', event => {
 
             if(event.target.checked){
-
 
                 // if(noOfVehiclesInGarage > 0){
                     // display garage
@@ -2895,8 +2915,12 @@ console.log(queryParts)
 
     function setupQuickSearch(){
         
-        if(!document.querySelector(customYmm['quickSearchWrapper'])) return 
-        
+        if(!document.querySelector(customYmm['quickSearchWrapper'])){
+            alert("quick search wrapper not presetn")
+            console.log("quick search wrapper not presetn")
+            return 
+        }
+        // document.querySelector(customYmm['quickSearchWrapper']).innerHTML = 'hello'
         document.querySelector(customYmm['quickSearchWrapper']).innerHTML = `
             <div class="search-modal__form">
             
@@ -3139,12 +3163,12 @@ console.log(queryParts)
 
 
     function hideOrShowMobileFilter(){
-
-        document.querySelector('.background-overlay').addEventListener('click', ()=> hideOrShowMobileFilter())
+        if(document.querySelector('.background-overlay')){
+            document.querySelector('.background-overlay').addEventListener('click', ()=> hideOrShowMobileFilter())
+        }
         if(document.querySelector(customYmm['filtersWrapperMobile'])){
-            document.querySelector(customYmm['filtersWrapperMobile']).classList.toggle('mobile-filters-open')
-            document.body.classList.toggle('mobile-filter-overlay')
-
+            document.querySelector(customYmm['filtersWrapperMobile']).classList.toggle('open')
+            document.body.classList.toggle('mobile-filter-open')
         }
 
     }
@@ -3165,8 +3189,6 @@ console.log(queryParts)
 
             <div class="ymm-container ${pageWidthFromThemeSettings}">
 
-
-                
                 <div id = "ymm-breadcrumb"></div>
                 
                 <div id="subcats-container" class="sub-category-item" style="display:none"></div>
@@ -3174,7 +3196,10 @@ console.log(queryParts)
                 <div class="ymm-filters-products ymm-mb-5 ymm-mt-5">
                     
                     <div class="filters-wrapper-desktop" id="filters-wrapper-desktop">
-                        <div class="ymm-filters-selections-wrapper"><div class = "ymm-filters-selections"></div></div>
+                        <div class="ymm-filters-selections-wrapper" style="display:none">
+                            <div class="facettitle" tabindex="0">Current search:</div>    
+                            <div class = "ymm-filters-selections"></div>
+                        </div>
                         <div class="filters-only-wrapper"></div>
                     </div>
 
@@ -3192,7 +3217,7 @@ console.log(queryParts)
                                 <div class = "change-vehicle-wrapper">
 
                                     <button onclick = "displayYmmFormInSearchPage()" class = "search-page-change-vehicle-btn button button-primary btn-change">
-                                        Change your Vehicle
+                                        Change  Vehicle
                                     </button>
 
                                 </div>
@@ -3211,7 +3236,18 @@ console.log(queryParts)
 
                         
                         <div class="search-results-count-sort-by">
-                            <span class="search-results-count"></span>
+                            ${
+                                window.innerWidth > 767
+                                ? `
+                                    <span class="search-results-count"></span>
+                                `: `
+                                    <div class="button btn--primary filters-btn" onclick="hideOrShowMobileFilter()">
+                                        Filters 
+                                        <svg class="filters-icon" viewBox="0 0 247.46 247.46"><path d="m246.74 13.984c-1.238-2.626-3.881-4.301-6.784-4.301h-232.46c-2.903 0-5.545 1.675-6.784 4.301-1.238 2.626-0.85 5.73 0.997 7.97l89.361 108.38v99.94c0 2.595 1.341 5.005 3.545 6.373 1.208 0.749 2.579 1.127 3.955 1.127 1.137 0 2.278-0.259 3.33-0.78l50.208-24.885c2.551-1.264 4.165-3.863 4.169-6.71l0.098-75.062 89.366-108.39c1.848-2.239 2.237-5.344 0.999-7.969zm-103.65 108.89c-1.105 1.34-1.711 3.023-1.713 4.761l-0.096 73.103-35.213 17.453v-90.546c0-1.741-0.605-3.428-1.713-4.771l-80.958-98.191h200.65l-80.958 98.191z"></path></svg>
+                                    </div>                                
+                                `
+                            }
+                            
                             <div class="sort-by"></div>
                         </div>
                        
@@ -3233,7 +3269,10 @@ console.log(queryParts)
     }
 
     function saveOrGoForSearchPage(containerId){
-        
+        let [selectedYear, selectedMake, selectedModel] = returnSelections(containerId)
+        if( !(selectedYear && selectedMake && selectedModel)){
+            return
+        }
         pushToGarage(containerId)
         hideYmmFormInSearchPage();
         fetchProductsAndRender()
@@ -3271,12 +3310,12 @@ console.log(queryParts)
 
     const decideWhatHappensAfterFormChangeInSearchPage = async (containerId) => {
         customYmm.currentPage = 1
-        clearProductDiv()
-
+        // clearProductDiv()
+        console.log("Anoj")
         let [selectedYear, selectedMake, selectedModel] = returnSelections(containerId)
         setURLparams()
-        clearContentsForCategoryPage()
-        
+        console.log(returnSelections(containerId))
+
         let dropdowns = await fetchYmmOnlyDataAndRender(containerId);
 
         manageHighlighted(containerId)
@@ -3348,10 +3387,8 @@ console.log(queryParts)
             }
 
             // window.location.href =  basePath
-
         }
         
-
     }
 
     function setDefaultCategory(){
@@ -3657,6 +3694,10 @@ console.log(queryParts)
     }
 
     function saveOrGoForHomePage(containerId){
+        let [selectedYear, selectedMake, selectedModel] = returnSelections(containerId)
+        if( !(selectedYear && selectedMake && selectedModel)){
+            return
+        }
         pushToGarage(containerId)
         
         
@@ -3676,7 +3717,7 @@ console.log(queryParts)
         let basePath = protocol+'//'+hostname+'/a/search/'
         window.location.href =   protocol+'//'+hostname+'/search/'
 
-        let [selectedYear, selectedMake, selectedModel] = returnSelections('custom-ymm-form-for-home-page')
+        
         let ymmdfn = [selectedYear, selectedMake, selectedModel]
         ymmdfn = ymmdfn.filter(e=> (e !== false && e!== '')).map(ee=>ee.replaceAll(' ', '_'))
         if(ymmdfn.length){
